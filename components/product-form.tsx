@@ -415,14 +415,9 @@ export default function ProductForm({ product, categories, suppliers }: ProductF
                 <div className="px-4 py-3">
                   <div className="flex items-center justify-between mb-2">
                     <p className="text-xs font-medium text-slate-500">Weight Variants</p>
-                    <span className="text-xs text-slate-400">Leave price blank to use product default</span>
+                    <span className="text-xs text-slate-400">Leave price blank if not applicable</span>
                   </div>
                   <WeightVariantEditor variants={weightVariants} onChange={setWeightVariants} />
-                  {/* fallback price */}
-                  <div className="mt-4 pt-3 border-t border-slate-100">
-                    <p className="text-xs text-slate-400 mb-2">Default / Fallback Price</p>
-                    <PricePair purchase={purchasePrice} sale={salePrice} onPurchase={setPurchasePrice} onSale={setSalePrice} />
-                  </div>
                 </div>
               )}
 
@@ -431,14 +426,9 @@ export default function ProductForm({ product, categories, suppliers }: ProductF
                 <div className="px-4 py-3">
                   <div className="flex items-center justify-between mb-2">
                     <p className="text-xs font-medium text-slate-500">Size Variants</p>
-                    <span className="text-xs text-slate-400">Leave price blank to use product default</span>
+                    <span className="text-xs text-slate-400">Leave price blank if not applicable</span>
                   </div>
                   <SizeVariantEditor sizes={sizes} onChange={setSizes} />
-                  {/* fallback price */}
-                  <div className="mt-4 pt-3 border-t border-slate-100">
-                    <p className="text-xs text-slate-400 mb-2">Default / Fallback Price</p>
-                    <PricePair purchase={purchasePrice} sale={salePrice} onPurchase={setPurchasePrice} onSale={setSalePrice} />
-                  </div>
                 </div>
               )}
 
