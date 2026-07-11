@@ -20,6 +20,7 @@ export interface SizeEntry {
   unit: SizeUnit;
   purchase_price?: number | null;
   sale_price?: number | null;
+  in_stock?: number | null;
 }
 
 export interface WeightVariant {
@@ -27,6 +28,7 @@ export interface WeightVariant {
   weight: WeightUnit;
   purchase_price?: number | null;
   sale_price?: number | null;
+  in_stock?: number | null;
 }
 
 export interface ColorEntry {

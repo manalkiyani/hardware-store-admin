@@ -90,9 +90,9 @@ function WeightVariantEditor({
     onChange(variants.filter((_, i) => i !== idx));
   }
 
-  function update(idx: number, field: "purchase_price" | "sale_price", val: string) {
+  function update(idx: number, field: "purchase_price" | "sale_price" | "in_stock", val: string) {
     onChange(variants.map((v, i) =>
-      i === idx ? { ...v, [field]: val === "" ? null : parseFloat(val) } : v
+      i === idx ? { ...v, [field]: val === "" ? null : field === "in_stock" ? parseInt(val, 10) : parseFloat(val) } : v
     ));
   }
 
@@ -103,7 +103,7 @@ function WeightVariantEditor({
       {variants.map((v, i) => (
         <div key={i} className="flex items-center gap-2 p-3 bg-slate-50 rounded-lg">
           <span className="text-sm font-medium text-slate-700 w-20 flex-shrink-0">{v.weight}</span>
-          <div className="flex-1 grid grid-cols-2 gap-2">
+          <div className="flex-1 grid grid-cols-3 gap-2">
             <div className="relative">
               <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400 text-xs">Rs</span>
               <input type="number" min="0" step="0.01"
@@ -122,6 +122,12 @@ function WeightVariantEditor({
                 className="w-full pl-8 pr-2 py-1.5 border border-slate-200 rounded-md text-sm outline-none focus:border-slate-400 bg-white"
               />
             </div>
+            <input type="number" min="0"
+              value={v.in_stock ?? ""}
+              onChange={(e) => update(i, "in_stock", e.target.value)}
+              placeholder="Qty"
+              className="w-full px-2 py-1.5 border border-slate-200 rounded-md text-sm outline-none focus:border-slate-400 bg-white"
+            />
           </div>
           <button type="button" onClick={() => remove(i)} className="p-1 text-slate-300 hover:text-red-500 transition-colors flex-shrink-0">
             <Trash2 size={14} />
@@ -166,9 +172,9 @@ function SizeVariantEditor({
     onChange(sizes.filter((_, i) => i !== idx));
   }
 
-  function update(idx: number, field: "purchase_price" | "sale_price", val: string) {
+  function update(idx: number, field: "purchase_price" | "sale_price" | "in_stock", val: string) {
     onChange(sizes.map((s, i) =>
-      i === idx ? { ...s, [field]: val === "" ? null : parseFloat(val) } : s
+      i === idx ? { ...s, [field]: val === "" ? null : field === "in_stock" ? parseInt(val, 10) : parseFloat(val) } : s
     ));
   }
 
@@ -177,7 +183,7 @@ function SizeVariantEditor({
       {sizes.map((s, i) => (
         <div key={i} className="flex items-center gap-2 p-3 bg-slate-50 rounded-lg">
           <span className="text-sm font-medium text-slate-700 w-20 flex-shrink-0">{s.value} {s.unit}</span>
-          <div className="flex-1 grid grid-cols-2 gap-2">
+          <div className="flex-1 grid grid-cols-3 gap-2">
             <div className="relative">
               <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400 text-xs">Rs</span>
               <input type="number" min="0" step="0.01"
@@ -196,6 +202,12 @@ function SizeVariantEditor({
                 className="w-full pl-8 pr-2 py-1.5 border border-slate-200 rounded-md text-sm outline-none focus:border-slate-400 bg-white"
               />
             </div>
+            <input type="number" min="0"
+              value={s.in_stock ?? ""}
+              onChange={(e) => update(i, "in_stock", e.target.value)}
+              placeholder="Qty"
+              className="w-full px-2 py-1.5 border border-slate-200 rounded-md text-sm outline-none focus:border-slate-400 bg-white"
+            />
           </div>
           <button type="button" onClick={() => remove(i)} className="p-1 text-slate-300 hover:text-red-500 transition-colors flex-shrink-0">
             <Trash2 size={14} />
@@ -284,12 +296,12 @@ export default function ProductForm({ product, categories, suppliers }: ProductF
         purchase_price: variantType === "none" && purchasePrice ? parseFloat(purchasePrice) : null,
         sale_price: variantType === "none" && salePrice ? parseFloat(salePrice) : null,
         weight_variants: variantType === "weight"
-          ? weightVariants.map(({ weight, purchase_price, sale_price }) => ({ weight, purchase_price, sale_price }))
+          ? weightVariants.map(({ weight, purchase_price, sale_price, in_stock }) => ({ weight, purchase_price, sale_price, in_stock }))
           : [],
         sizes: variantType === "size"
-          ? sizes.map(({ value, unit, purchase_price, sale_price }) => ({ value, unit, purchase_price, sale_price }))
+          ? sizes.map(({ value, unit, purchase_price, sale_price, in_stock }) => ({ value, unit, purchase_price, sale_price, in_stock }))
           : variantType === "none"
-          ? sizes.map(({ value, unit }) => ({ value, unit, purchase_price: null, sale_price: null }))
+          ? sizes.map(({ value, unit }) => ({ value, unit, purchase_price: null, sale_price: null, in_stock: null }))
           : [],
         colors: colors.map((v) => ({ value: v })),
         in_stock: inStock ? parseInt(inStock, 10) : undefined,
@@ -415,8 +427,15 @@ export default function ProductForm({ product, categories, suppliers }: ProductF
                 <div className="px-4 py-3">
                   <div className="flex items-center justify-between mb-2">
                     <p className="text-xs font-medium text-slate-500">Weight Variants</p>
-                    <span className="text-xs text-slate-400">Leave price blank if not applicable</span>
+                    <span className="text-xs text-slate-400">Leave blank if not applicable</span>
                   </div>
+                  {weightVariants.length > 0 && (
+                    <div className="grid grid-cols-3 gap-2 px-3 mb-1 ml-[88px]">
+                      <span className="text-xs text-slate-400">Buy Price</span>
+                      <span className="text-xs text-slate-400">Sell Price</span>
+                      <span className="text-xs text-slate-400">Qty</span>
+                    </div>
+                  )}
                   <WeightVariantEditor variants={weightVariants} onChange={setWeightVariants} />
                 </div>
               )}
@@ -426,8 +445,15 @@ export default function ProductForm({ product, categories, suppliers }: ProductF
                 <div className="px-4 py-3">
                   <div className="flex items-center justify-between mb-2">
                     <p className="text-xs font-medium text-slate-500">Size Variants</p>
-                    <span className="text-xs text-slate-400">Leave price blank if not applicable</span>
+                    <span className="text-xs text-slate-400">Leave blank if not applicable</span>
                   </div>
+                  {sizes.length > 0 && (
+                    <div className="grid grid-cols-3 gap-2 px-3 mb-1 ml-[88px]">
+                      <span className="text-xs text-slate-400">Buy Price</span>
+                      <span className="text-xs text-slate-400">Sell Price</span>
+                      <span className="text-xs text-slate-400">Qty</span>
+                    </div>
+                  )}
                   <SizeVariantEditor sizes={sizes} onChange={setSizes} />
                 </div>
               )}
@@ -482,11 +508,13 @@ export default function ProductForm({ product, categories, suppliers }: ProductF
               {/* Inventory */}
               <div className="px-4 py-3">
                 <p className="text-xs font-medium text-slate-500 mb-2">Inventory</p>
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <label className="block text-xs text-slate-400 mb-1">In Stock</label>
-                    <input type="number" min="0" value={inStock} onChange={(e) => setInStock(e.target.value)} placeholder="0" className={inputCls} />
-                  </div>
+                <div className={variantType === "none" ? "grid grid-cols-2 gap-3" : ""}>
+                  {variantType === "none" && (
+                    <div>
+                      <label className="block text-xs text-slate-400 mb-1">In Stock</label>
+                      <input type="number" min="0" value={inStock} onChange={(e) => setInStock(e.target.value)} placeholder="0" className={inputCls} />
+                    </div>
+                  )}
                   <div>
                     <label className="block text-xs text-slate-400 mb-1">Shelf Location</label>
                     <input type="text" value={shelfLocation} onChange={(e) => setShelfLocation(e.target.value)} placeholder="e.g. A3-Row2" className={inputCls} />

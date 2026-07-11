@@ -468,7 +468,11 @@ export default function Screener({
 
                   {show("inStock") && (
                     <td className="px-4 py-3 text-sm text-slate-500 text-right">
-                      {product.in_stock ?? "—"}
+                      {product.variant_type === "weight" && product.weight_variants?.length
+                        ? product.weight_variants.reduce((s, v) => s + (v.in_stock ?? 0), 0)
+                        : product.variant_type === "size" && product.sizes?.length
+                        ? product.sizes.reduce((s, v) => s + (v.in_stock ?? 0), 0)
+                        : (product.in_stock ?? "—")}
                     </td>
                   )}
 
@@ -493,7 +497,8 @@ export default function Screener({
                               {product.variant_type === "weight" ? "Weight" : "Size"}
                             </th>
                             <th className="text-right font-medium pr-6 pb-1">Purchase Price</th>
-                            <th className="text-right font-medium pb-1">Sale Price</th>
+                            <th className="text-right font-medium pr-6 pb-1">Sale Price</th>
+                            <th className="text-right font-medium pb-1">In Stock</th>
                           </tr>
                         </thead>
                         <tbody>
@@ -503,8 +508,11 @@ export default function Screener({
                               <td className="pr-6 py-0.5 text-right text-slate-500 tabular-nums">
                                 {v.purchase_price != null ? `Rs ${v.purchase_price.toLocaleString()}` : <span className="text-slate-300">—</span>}
                               </td>
-                              <td className="py-0.5 text-right text-slate-700 font-medium tabular-nums">
+                              <td className="pr-6 py-0.5 text-right text-slate-700 font-medium tabular-nums">
                                 {v.sale_price != null ? `Rs ${v.sale_price.toLocaleString()}` : <span className="text-slate-300">—</span>}
+                              </td>
+                              <td className="py-0.5 text-right text-slate-500 tabular-nums">
+                                {v.in_stock != null ? v.in_stock : <span className="text-slate-300">—</span>}
                               </td>
                             </tr>
                           ))}
@@ -514,22 +522,14 @@ export default function Screener({
                               <td className="pr-6 py-0.5 text-right text-slate-500 tabular-nums">
                                 {s.purchase_price != null ? `Rs ${s.purchase_price.toLocaleString()}` : <span className="text-slate-300">—</span>}
                               </td>
-                              <td className="py-0.5 text-right text-slate-700 font-medium tabular-nums">
+                              <td className="pr-6 py-0.5 text-right text-slate-700 font-medium tabular-nums">
                                 {s.sale_price != null ? `Rs ${s.sale_price.toLocaleString()}` : <span className="text-slate-300">—</span>}
+                              </td>
+                              <td className="py-0.5 text-right text-slate-500 tabular-nums">
+                                {s.in_stock != null ? s.in_stock : <span className="text-slate-300">—</span>}
                               </td>
                             </tr>
                           ))}
-                          {(product.purchase_price != null || product.sale_price != null) && (
-                            <tr className="border-t border-slate-200 mt-1">
-                              <td className="pr-8 py-0.5 text-slate-400 italic">Default</td>
-                              <td className="pr-6 py-0.5 text-right text-slate-400 tabular-nums">
-                                {product.purchase_price != null ? `Rs ${product.purchase_price.toLocaleString()}` : "—"}
-                              </td>
-                              <td className="py-0.5 text-right text-slate-400 tabular-nums">
-                                {product.sale_price != null ? `Rs ${product.sale_price.toLocaleString()}` : "—"}
-                              </td>
-                            </tr>
-                          )}
                         </tbody>
                       </table>
                     </td>
