@@ -503,7 +503,9 @@ export default function Screener({
                   )}
                   {show("lastUpdated") && (
                     <td className="px-4 py-3 text-sm text-slate-500">
-                      {product.last_updated ?? <span className="text-slate-300">—</span>}
+                      {product.last_updated
+                        ? new Date(product.last_updated).toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" }).replace(/ /g, "-")
+                        : <span className="text-slate-300">—</span>}
                     </td>
                   )}
                   <td className="px-4 py-3 text-right">
