@@ -21,9 +21,12 @@ export default function Sidebar() {
         <div className="w-8 h-8 bg-teal-800 rounded-lg flex items-center justify-center flex-shrink-0">
           <Wrench size={16} className="text-white" />
         </div>
-        <span className="font-semibold text-white text-sm leading-tight">
-          Hardware Store
-        </span>
+        <div>
+          <span className="font-semibold text-white text-sm leading-tight block">
+            Hardware & Paint Store
+          </span>
+          <span className="text-teal-400 text-xs">0301 5012299</span>
+        </div>
       </div>
 
       {/* Nav */}
