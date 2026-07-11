@@ -11,7 +11,7 @@ export interface StrapiImage {
 }
 
 export type SizeUnit = "foot" | "inch" | "meter";
-export type WeightUnit = "Dabbi" | "Quarter" | "Bucket" | "Gallon";
+export type WeightUnit = "Dabbi" | "Quarter" | "Gallon" | "Bucket";
 
 export interface SizeEntry {
   id?: number;

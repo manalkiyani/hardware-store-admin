@@ -18,7 +18,7 @@ interface ProductFormProps {
 }
 
 const SIZE_UNITS: SizeUnit[] = ["inch", "foot", "meter"];
-const WEIGHT_UNITS: WeightUnit[] = ["Dabbi", "Quarter", "Bucket", "Gallon"];
+const WEIGHT_UNITS: WeightUnit[] = ["Dabbi", "Quarter", "Gallon", "Bucket"];
 
 type SaveState = "idle" | "saving" | "saved";
 
@@ -294,188 +294,158 @@ export default function ProductForm({
           </div>
         )}
 
-        <div className="grid grid-cols-3 gap-6">
-          {/* LEFT */}
-          <div className="col-span-2 space-y-5">
+        <div className="grid grid-cols-3 gap-5">
+          {/* LEFT — single box */}
+          <div className="col-span-2">
+            <div className="bg-white rounded-xl border border-slate-200 divide-y divide-slate-100">
 
-            {/* Product Details */}
-            <div className="bg-white rounded-xl border border-slate-200 p-5">
-              <h2 className="text-sm font-semibold text-slate-900 mb-4">
-                Product Details
-              </h2>
-              <div className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-1.5">
-                    Name <span className="text-red-500">*</span>
-                  </label>
-                  <input
-                    type="text"
-                    value={name}
-                    onChange={(e) => setName(e.target.value)}
-                    required
-                    placeholder="e.g. Stainless Steel Bolt Set"
-                    className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm outline-none focus:border-slate-400 focus:ring-1 focus:ring-slate-200"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-1.5">
-                    Description
-                  </label>
-                  <textarea
-                    value={description}
-                    onChange={(e) => setDescription(e.target.value)}
-                    rows={3}
-                    placeholder="Describe the product…"
-                    className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm outline-none focus:border-slate-400 focus:ring-1 focus:ring-slate-200 resize-none"
-                  />
-                </div>
-                <div className="grid grid-cols-2 gap-4">
+              {/* Name */}
+              <div className="px-4 py-3">
+                <label className="block text-xs font-medium text-slate-500 mb-1">
+                  Name <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  required
+                  placeholder="e.g. Stainless Steel Bolt Set"
+                  className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm outline-none focus:border-slate-400 focus:ring-1 focus:ring-slate-200"
+                />
+              </div>
+
+              {/* Weight */}
+              <div className="px-4 py-3">
+                <label className="block text-xs font-medium text-slate-500 mb-1">
+                  Weight
+                </label>
+                <Dropdown
+                  value={weight}
+                  onChange={setWeight}
+                  placeholder="Select weight…"
+                  fullWidth
+                  options={WEIGHT_UNITS.map((w) => ({ value: w, label: w }))}
+                />
+              </div>
+
+              {/* Pricing */}
+              <div className="px-4 py-3">
+                <p className="text-xs font-medium text-slate-500 mb-2">Pricing</p>
+                <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <label className="block text-sm font-medium text-slate-700 mb-1.5">
-                      Code / SKU
-                    </label>
+                    <label className="block text-xs text-slate-400 mb-1">Purchase Price</label>
+                    <div className="relative">
+                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm">Rs</span>
+                      <input
+                        type="number" min="0" step="0.01"
+                        value={purchasePrice}
+                        onChange={(e) => setPurchasePrice(e.target.value)}
+                        placeholder="0.00"
+                        className="w-full pl-9 pr-3 py-2 border border-slate-200 rounded-lg text-sm outline-none focus:border-slate-400 focus:ring-1 focus:ring-slate-200"
+                      />
+                    </div>
+                  </div>
+                  <div>
+                    <label className="block text-xs text-slate-400 mb-1">Sale Price <span className="text-red-500">*</span></label>
+                    <div className="relative">
+                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm">Rs</span>
+                      <input
+                        type="number" min="0" step="0.01"
+                        value={salePrice}
+                        onChange={(e) => setSalePrice(e.target.value)}
+                        required
+                        placeholder="0.00"
+                        className="w-full pl-9 pr-3 py-2 border border-slate-200 rounded-lg text-sm outline-none focus:border-slate-400 focus:ring-1 focus:ring-slate-200"
+                      />
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Inventory */}
+              <div className="px-4 py-3">
+                <p className="text-xs font-medium text-slate-500 mb-2">Inventory</p>
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-xs text-slate-400 mb-1">In Stock</label>
                     <input
-                      type="text"
-                      value={code}
-                      onChange={(e) => setCode(e.target.value)}
-                      placeholder="e.g. SKU-001"
+                      type="number" min="0"
+                      value={inStock}
+                      onChange={(e) => setInStock(e.target.value)}
+                      placeholder="0"
                       className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm outline-none focus:border-slate-400 focus:ring-1 focus:ring-slate-200"
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-slate-700 mb-1.5">
-                      Material
-                    </label>
+                    <label className="block text-xs text-slate-400 mb-1">Shelf Location</label>
                     <input
                       type="text"
-                      value={material}
-                      onChange={(e) => setMaterial(e.target.value)}
-                      placeholder="e.g. Stainless Steel"
+                      value={shelfLocation}
+                      onChange={(e) => setShelfLocation(e.target.value)}
+                      placeholder="e.g. A3-Row2"
                       className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm outline-none focus:border-slate-400 focus:ring-1 focus:ring-slate-200"
                     />
                   </div>
                 </div>
-                <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-1.5">
-                    Weight
-                  </label>
-                  <Dropdown
-                    value={weight}
-                    onChange={setWeight}
-                    placeholder="Select weight…"
-                    fullWidth
-                    options={WEIGHT_UNITS.map((w) => ({ value: w, label: w }))}
-                  />
-                </div>
               </div>
-            </div>
 
-            {/* Pricing */}
-            <div className="bg-white rounded-xl border border-slate-200 p-5">
-              <h2 className="text-sm font-semibold text-slate-900 mb-4">
-                Pricing
-              </h2>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-1.5">
-                    Purchase Price
-                  </label>
-                  <div className="relative">
-                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm">
-                      Rs
-                    </span>
-                    <input
-                      type="number"
-                      min="0"
-                      step="0.01"
-                      value={purchasePrice}
-                      onChange={(e) => setPurchasePrice(e.target.value)}
-                      placeholder="0.00"
-                      className="w-full pl-9 pr-3 py-2 border border-slate-200 rounded-lg text-sm outline-none focus:border-slate-400 focus:ring-1 focus:ring-slate-200"
-                    />
-                  </div>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-1.5">
-                    Sale Price <span className="text-red-500">*</span>
-                  </label>
-                  <div className="relative">
-                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm">
-                      Rs
-                    </span>
-                    <input
-                      type="number"
-                      min="0"
-                      step="0.01"
-                      value={salePrice}
-                      onChange={(e) => setSalePrice(e.target.value)}
-                      required
-                      placeholder="0.00"
-                      className="w-full pl-9 pr-3 py-2 border border-slate-200 rounded-lg text-sm outline-none focus:border-slate-400 focus:ring-1 focus:ring-slate-200"
-                    />
-                  </div>
-                </div>
+              {/* Sizes */}
+              <div className="px-4 py-3">
+                <p className="text-xs font-medium text-slate-500 mb-2">Sizes</p>
+                <SizeEditor sizes={sizes} onChange={setSizes} />
               </div>
-            </div>
 
-            {/* Inventory */}
-            <div className="bg-white rounded-xl border border-slate-200 p-5">
-              <h2 className="text-sm font-semibold text-slate-900 mb-4">
-                Inventory
-              </h2>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-1.5">
-                    In Stock
-                  </label>
-                  <input
-                    type="number"
-                    min="0"
-                    value={inStock}
-                    onChange={(e) => setInStock(e.target.value)}
-                    placeholder="0"
-                    className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm outline-none focus:border-slate-400 focus:ring-1 focus:ring-slate-200"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-1.5">
-                    Shelf Location
-                  </label>
-                  <input
-                    type="text"
-                    value={shelfLocation}
-                    onChange={(e) => setShelfLocation(e.target.value)}
-                    placeholder="e.g. A3-Row2"
-                    className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm outline-none focus:border-slate-400 focus:ring-1 focus:ring-slate-200"
-                  />
-                </div>
+              {/* Colors */}
+              <div className="px-4 py-3">
+                <p className="text-xs font-medium text-slate-500 mb-2">Colors</p>
+                <ChipInput label="Available colors" values={colors} onChange={setColors} />
               </div>
-            </div>
 
-            {/* Sizes */}
-            <div className="bg-white rounded-xl border border-slate-200 p-5">
-              <h2 className="text-sm font-semibold text-slate-900 mb-4">Sizes</h2>
-              <SizeEditor sizes={sizes} onChange={setSizes} />
-            </div>
+              {/* Description */}
+              <div className="px-4 py-3">
+                <label className="block text-xs font-medium text-slate-500 mb-1">Description</label>
+                <textarea
+                  value={description}
+                  onChange={(e) => setDescription(e.target.value)}
+                  rows={3}
+                  placeholder="Describe the product…"
+                  className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm outline-none focus:border-slate-400 focus:ring-1 focus:ring-slate-200 resize-none"
+                />
+              </div>
 
-            {/* Colors */}
-            <div className="bg-white rounded-xl border border-slate-200 p-5">
-              <h2 className="text-sm font-semibold text-slate-900 mb-4">Colors</h2>
-              <ChipInput
-                label="Available colors"
-                values={colors}
-                onChange={setColors}
-              />
+              {/* Material */}
+              <div className="px-4 py-3">
+                <label className="block text-xs font-medium text-slate-500 mb-1">Material</label>
+                <input
+                  type="text"
+                  value={material}
+                  onChange={(e) => setMaterial(e.target.value)}
+                  placeholder="e.g. Stainless Steel"
+                  className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm outline-none focus:border-slate-400 focus:ring-1 focus:ring-slate-200"
+                />
+              </div>
+
             </div>
           </div>
 
           {/* RIGHT */}
-          <div className="col-span-1 space-y-5">
-            {/* Upload Image */}
-            <div className="bg-white rounded-xl border border-slate-200 p-5">
-              <h2 className="text-sm font-semibold text-slate-900 mb-4">
-                Product Image
-              </h2>
+          <div className="col-span-1 space-y-3">
+
+            {/* Code above image */}
+            <div className="bg-white rounded-xl border border-slate-200 px-4 py-3">
+              <label className="block text-xs font-medium text-slate-500 mb-1">Code / SKU</label>
+              <input
+                type="text"
+                value={code}
+                onChange={(e) => setCode(e.target.value)}
+                placeholder="e.g. SKU-001"
+                className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm outline-none focus:border-slate-400 focus:ring-1 focus:ring-slate-200"
+              />
+            </div>
+
+            {/* Image */}
+            <div className="bg-white rounded-xl border border-slate-200 p-3">
+              <p className="text-xs font-medium text-slate-500 mb-2">Image</p>
               <div
                 onClick={() => fileInputRef.current?.click()}
                 className={clsx(
@@ -495,74 +465,52 @@ export default function ProductForm({
                   />
                 ) : (
                   <div className="flex flex-col items-center justify-center h-full gap-2 text-slate-400 py-8">
-                    <Upload size={24} />
-                    <span className="text-xs text-center px-4">
-                      Click to upload image
-                    </span>
+                    <Upload size={20} />
+                    <span className="text-xs text-center px-4">Click to upload</span>
                   </div>
                 )}
               </div>
-              <input
-                ref={fileInputRef}
-                type="file"
-                accept="image/*"
-                onChange={handleImageChange}
-                className="hidden"
-              />
-              {displayImage && (
-                <p className="text-xs text-slate-400 mt-2 text-center">
-                  Click image to change
-                </p>
-              )}
+              <input ref={fileInputRef} type="file" accept="image/*" onChange={handleImageChange} className="hidden" />
+              {displayImage && <p className="text-xs text-slate-400 mt-2 text-center">Click to change</p>}
             </div>
 
-            {/* Category */}
-            <div className="bg-white rounded-xl border border-slate-200 p-5">
-              <h2 className="text-sm font-semibold text-slate-900 mb-4">
-                Category
-              </h2>
-              <Dropdown
-                value={categoryId}
-                onChange={setCategoryId}
-                placeholder="— None —"
-                fullWidth
-                options={categories.map((cat) => ({
-                  value: cat.id.toString(),
-                  label: buildCategoryLabel(cat, categories),
-                  indent: !!cat.parent_category,
-                }))}
-              />
+            {/* Category + Supplier + Last Updated — one box */}
+            <div className="bg-white rounded-xl border border-slate-200 divide-y divide-slate-100">
+              <div className="px-4 py-3">
+                <label className="block text-xs font-medium text-slate-500 mb-1">Category</label>
+                <Dropdown
+                  value={categoryId}
+                  onChange={setCategoryId}
+                  placeholder="— None —"
+                  fullWidth
+                  options={categories.map((cat) => ({
+                    value: cat.id.toString(),
+                    label: buildCategoryLabel(cat, categories),
+                    indent: !!cat.parent_category,
+                  }))}
+                />
+              </div>
+              <div className="px-4 py-3">
+                <label className="block text-xs font-medium text-slate-500 mb-1">Brand / Supplier</label>
+                <Dropdown
+                  value={supplierId}
+                  onChange={setSupplierId}
+                  placeholder="— None —"
+                  fullWidth
+                  options={suppliers.map((s) => ({ value: s.id.toString(), label: s.name }))}
+                />
+              </div>
+              <div className="px-4 py-3">
+                <label className="block text-xs font-medium text-slate-500 mb-1">Last Updated</label>
+                <input
+                  type="date"
+                  value={lastUpdated}
+                  readOnly
+                  className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm text-slate-500 bg-slate-50 cursor-default"
+                />
+              </div>
             </div>
 
-            {/* Brand / Supplier */}
-            <div className="bg-white rounded-xl border border-slate-200 p-5">
-              <h2 className="text-sm font-semibold text-slate-900 mb-4">
-                Brand / Supplier
-              </h2>
-              <Dropdown
-                value={supplierId}
-                onChange={setSupplierId}
-                placeholder="— None —"
-                fullWidth
-                options={suppliers.map((s) => ({
-                  value: s.id.toString(),
-                  label: s.name,
-                }))}
-              />
-            </div>
-
-            {/* Last Updated */}
-            <div className="bg-white rounded-xl border border-slate-200 p-5">
-              <h2 className="text-sm font-semibold text-slate-900 mb-4">
-                Last Updated
-              </h2>
-              <input
-                type="date"
-                value={lastUpdated}
-                readOnly
-                className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm text-slate-500 bg-slate-50 cursor-default"
-              />
-            </div>
           </div>
         </div>
       </form>
