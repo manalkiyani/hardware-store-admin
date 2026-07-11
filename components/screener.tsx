@@ -7,6 +7,7 @@ import { Search, X, Columns3, ChevronUp, ChevronDown, ChevronsUpDown, ChevronRig
 import { useRouter } from "next/navigation";
 import type { Product, Category, BrandSupplier, WeightVariant, SizeEntry, WeightUnit } from "@/lib/types";
 import { getSupplierColor } from "@/lib/supplier-colors";
+import { toPascalCase } from "@/lib/utils";
 
 const WEIGHT_COLORS: Record<WeightUnit, string> = {
   Dabbi:   "bg-orange-500 text-white",
@@ -388,7 +389,7 @@ export default function Screener({
                         href={`/products/${product.documentId}/edit`}
                         className="text-sm font-medium text-slate-900 hover:text-blue-600 transition-colors"
                       >
-                        {product.name}
+                        {toPascalCase(product.name)}
                       </Link>
                       {product.code && <p className="text-xs text-slate-400 mt-0.5">{product.code}</p>}
                     </td>
@@ -444,7 +445,7 @@ export default function Screener({
                     <td className="px-4 py-3 text-sm text-slate-500">
                       {product.category ? (
                         <span className="inline-block px-2 py-0.5 bg-slate-100 text-slate-600 text-xs rounded-full">
-                          {product.category.name}
+                          {toPascalCase(product.category.name)}
                         </span>
                       ) : <span className="text-slate-300">—</span>}
                     </td>
@@ -457,7 +458,7 @@ export default function Screener({
                         return (
                           <span className="inline-block px-2 py-0.5 text-xs rounded-full font-semibold"
                             style={{ backgroundColor: c.bg, color: c.text }}>
-                            {product.brand_supplier.name}
+                            {toPascalCase(product.brand_supplier.name)}
                           </span>
                         );
                       })() : <span className="text-slate-300">—</span>}

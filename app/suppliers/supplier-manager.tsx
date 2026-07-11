@@ -12,6 +12,7 @@ import {
 } from "@/lib/api";
 import type { BrandSupplier } from "@/lib/types";
 import { SUPPLIER_COLOR_OPTIONS, getSupplierColor } from "@/lib/supplier-colors";
+import { toPascalCase } from "@/lib/utils";
 
 interface SupplierManagerProps {
   initialSuppliers: BrandSupplier[];
@@ -240,7 +241,7 @@ export default function SupplierManager({
                             className="inline-block px-2.5 py-0.5 rounded-full text-xs font-semibold"
                             style={{ backgroundColor: color.bg, color: color.text }}
                           >
-                            {supplier.name}
+                            {toPascalCase(supplier.name)}
                           </span>
                         </Link>
                       )}

@@ -7,6 +7,7 @@ import { Plus, Trash2, AlertCircle, Check, X } from "lucide-react";
 import clsx from "clsx";
 import { createCategory, deleteCategory } from "@/lib/api";
 import type { Category } from "@/lib/types";
+import { toPascalCase } from "@/lib/utils";
 
 interface CategoryManagerProps {
   initialCategories: Category[];
@@ -80,7 +81,7 @@ export default function CategoryManager({
   function getParentName(cat: Category): string {
     if (!cat.parent_category) return "—";
     const parent = categories.find((c) => c.id === cat.parent_category?.id);
-    return parent?.name ?? "—";
+    return parent ? toPascalCase(parent.name) : "—";
   }
 
   return (
@@ -199,7 +200,7 @@ export default function CategoryManager({
                       href={`/?category=${cat.id}`}
                       className="text-sm font-medium text-slate-900 hover:text-amber-600 transition-colors"
                     >
-                      {cat.name}
+                      {toPascalCase(cat.name)}
                     </Link>
                   </td>
                   <td className="px-5 py-3 text-sm text-slate-500">
