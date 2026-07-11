@@ -9,10 +9,10 @@ import type { Product, Category, BrandSupplier, WeightVariant, SizeEntry, Weight
 import { getSupplierColor } from "@/lib/supplier-colors";
 
 const WEIGHT_COLORS: Record<WeightUnit, string> = {
-  Dabbi:   "bg-orange-100 text-orange-700",
-  Quarter: "bg-blue-100 text-blue-700",
-  Gallon:  "bg-emerald-100 text-emerald-700",
-  Bucket:  "bg-violet-100 text-violet-700",
+  Dabbi:   "bg-orange-500 text-white",
+  Quarter: "bg-blue-500 text-white",
+  Gallon:  "bg-emerald-500 text-white",
+  Bucket:  "bg-violet-500 text-white",
 };
 
 function lowestSalePrice(p: Product): number | null {
