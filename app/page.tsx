@@ -1,6 +1,7 @@
+import Link from "next/link";
+import { Plus, AlertCircle } from "lucide-react";
 import { getProducts, getCategories, getBrandSuppliers } from "@/lib/api";
 import type { Product, Category, BrandSupplier } from "@/lib/types";
-import { AlertCircle } from "lucide-react";
 import Screener from "@/components/screener";
 
 async function fetchData() {
@@ -31,11 +32,15 @@ export default async function ScreenerPage({
 
   return (
     <div>
-      <div className="mb-6">
-        <h1 className="text-2xl font-semibold text-slate-900">Screener</h1>
-        <p className="text-sm text-slate-500 mt-1">
-          Search and filter your product catalog
-        </p>
+      <div className="flex items-center justify-between mb-6">
+        <h1 className="text-2xl font-semibold text-slate-900">Products</h1>
+        <Link
+          href="/products/new"
+          className="inline-flex items-center gap-2 px-4 py-2 bg-teal-950 text-white text-sm font-medium rounded-lg hover:bg-teal-800 transition-colors"
+        >
+          <Plus size={15} />
+          Add Product
+        </Link>
       </div>
 
       {error && (

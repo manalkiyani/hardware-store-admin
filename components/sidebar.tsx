@@ -2,12 +2,11 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Wrench, LayoutDashboard, Package, FolderTree, Truck } from "lucide-react";
+import { Wrench, Package, FolderTree, Truck } from "lucide-react";
 import clsx from "clsx";
 
 const navItems = [
-  { href: "/", label: "Screener", icon: LayoutDashboard },
-  { href: "/products", label: "Products", icon: Package },
+  { href: "/", label: "Products", icon: Package },
   { href: "/categories", label: "Categories", icon: FolderTree },
   { href: "/suppliers", label: "Suppliers", icon: Truck },
 ];

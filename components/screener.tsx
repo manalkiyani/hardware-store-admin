@@ -7,6 +7,7 @@ import { Search, X, Columns3 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import type { Product, Category, BrandSupplier } from "@/lib/types";
 import { Dropdown } from "./dropdown";
+import ProductActions from "./product-actions";
 
 interface ScreenerProps {
   products: Product[];
@@ -234,6 +235,7 @@ export default function Screener({
                 {show("salePrice")     && <th className="text-right text-xs font-medium text-slate-400 uppercase tracking-wide px-4 py-3">Sale Price</th>}
                 {show("inStock")       && <th className="text-right text-xs font-medium text-slate-400 uppercase tracking-wide px-4 py-3">In Stock</th>}
                 {show("shelfLocation") && <th className="text-left text-xs font-medium text-slate-400 uppercase tracking-wide px-4 py-3">Shelf Location</th>}
+                <th className="text-right text-xs font-medium text-slate-400 uppercase tracking-wide px-4 py-3">Actions</th>
               </tr>
             </thead>
             <tbody>
@@ -368,6 +370,9 @@ export default function Screener({
                       {product.shelf_location ?? <span className="text-slate-300">—</span>}
                     </td>
                   )}
+                  <td className="px-4 py-3 text-right">
+                    <ProductActions productId={product.documentId} productName={product.name} />
+                  </td>
                 </tr>
               ))}
             </tbody>
