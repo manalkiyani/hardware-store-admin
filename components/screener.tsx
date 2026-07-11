@@ -344,8 +344,8 @@ export default function Screener({
                   <td className="px-2 py-3 w-8">
                     {hasVariants && (
                       <button type="button" onClick={() => toggleExpand(product.id)}
-                        className="p-0.5 text-slate-400 hover:text-blue-600 transition-colors rounded">
-                        <ChevronRight size={14} className={`transition-transform ${isExpanded ? "rotate-90" : ""}`} />
+                        className="p-0.5 text-red-500 hover:text-red-700 transition-colors rounded">
+                        <ChevronRight size={14} strokeWidth={3} className={`transition-transform ${isExpanded ? "rotate-90" : ""}`} />
                       </button>
                     )}
                   </td>
