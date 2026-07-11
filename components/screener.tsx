@@ -108,14 +108,22 @@ export default function Screener({
   const [search, setSearch] = useState(initialSearch);
   const [categoryId, setCategoryId] = useState(initialCategoryId);
   const [supplierId, setSupplierId] = useState(initialSupplierId);
-  const [visibleCols, setVisibleCols] = useState<Set<ColKey>>(
-    () => new Set(ALL_COLS.filter((c) => c.defaultOn).map((c) => c.key))
-  );
+  const [visibleCols, setVisibleCols] = useState<Set<ColKey>>(() => {
+    try {
+      const saved = localStorage.getItem("screener-cols");
+      if (saved) {
+        const parsed: ColKey[] = JSON.parse(saved);
+        return new Set(parsed.filter((k) => ALL_COLS.some((c) => c.key === k)));
+      }
+    } catch {}
+    return new Set(ALL_COLS.filter((c) => c.defaultOn).map((c) => c.key));
+  });
 
   function toggleCol(key: ColKey, on: boolean) {
     setVisibleCols((prev) => {
       const next = new Set(prev);
       on ? next.add(key) : next.delete(key);
+      localStorage.setItem("screener-cols", JSON.stringify([...next]));
       return next;
     });
   }
