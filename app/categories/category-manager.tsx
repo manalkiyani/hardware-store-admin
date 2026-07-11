@@ -147,8 +147,8 @@ export default function CategoryManager({
             type="submit"
             disabled={adding || !newName.trim()}
             className={clsx(
-              "inline-flex items-center gap-2 px-4 py-2 bg-teal-950 text-white text-sm font-medium rounded-lg",
-              "hover:bg-teal-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              "inline-flex items-center gap-2 px-4 py-2 bg-amber-600 text-white text-sm font-medium rounded-lg",
+              "hover:bg-amber-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             )}
           >
             <Plus size={14} />
@@ -197,7 +197,7 @@ export default function CategoryManager({
                   <td className="px-5 py-3">
                     <Link
                       href={`/?category=${cat.id}`}
-                      className="text-sm font-medium text-slate-900 hover:text-teal-700 transition-colors"
+                      className="text-sm font-medium text-slate-900 hover:text-amber-600 transition-colors"
                     >
                       {cat.name}
                     </Link>

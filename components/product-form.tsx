@@ -278,8 +278,8 @@ export default function ProductForm({
             type="submit"
             disabled={saveState !== "idle"}
             className={clsx(
-              "inline-flex items-center gap-2 px-4 py-2 bg-teal-950 text-white text-sm font-medium rounded-lg",
-              "hover:bg-teal-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              "inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg",
+              "hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             )}
           >
             <Save size={15} />

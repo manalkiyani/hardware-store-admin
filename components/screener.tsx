@@ -59,7 +59,7 @@ function ColPicker({
         type="button"
         onClick={() => setOpen((p) => !p)}
         className={`inline-flex items-center gap-2 px-3 py-2 border rounded-lg text-sm bg-white transition-colors ${
-          open ? "border-teal-700 ring-1 ring-teal-100 text-slate-800" : "border-slate-200 hover:border-slate-300 text-slate-500"
+          open ? "border-blue-500 ring-1 ring-blue-100 text-slate-800" : "border-slate-200 hover:border-slate-300 text-slate-500"
         }`}
       >
         <Columns3 size={14} />
@@ -83,7 +83,7 @@ function ColPicker({
                   checked={checked}
                   disabled={isName}
                   onChange={(e) => onChange(col.key, e.target.checked)}
-                  className="w-3.5 h-3.5 rounded accent-teal-700"
+                  className="w-3.5 h-3.5 rounded accent-blue-600"
                 />
                 {col.label}
                 {isName && <span className="ml-auto text-xs text-slate-300">always</span>}
@@ -174,7 +174,7 @@ export default function Screener({
             value={search}
             onChange={(e) => handleSearch(e.target.value)}
             placeholder="Search by name or slug…"
-            className="w-full pl-8 pr-3 py-2 border border-slate-200 rounded-lg text-sm bg-white outline-none focus:border-teal-700 focus:ring-1 focus:ring-teal-100"
+            className="w-full pl-8 pr-3 py-2 border border-slate-200 rounded-lg text-sm bg-white outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-100"
           />
           {search && (
             <button onClick={() => handleSearch("")} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600">
@@ -279,7 +279,7 @@ export default function Screener({
                     <td className="px-4 py-3">
                       <Link
                         href={`/products/${product.documentId}/edit`}
-                        className="text-sm font-medium text-slate-900 hover:text-teal-700 transition-colors"
+                        className="text-sm font-medium text-slate-900 hover:text-blue-600 transition-colors"
                       >
                         {product.name}
                       </Link>

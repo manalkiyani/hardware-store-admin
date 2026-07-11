@@ -47,7 +47,7 @@ export default function Sidebar() {
               className={clsx(
                 "flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors",
                 isActive
-                  ? "bg-teal-800 text-white"
+                  ? "bg-amber-400 text-teal-950 font-semibold"
                   : "text-teal-100 hover:bg-teal-900 hover:text-white"
               )}
             >
