@@ -3,7 +3,7 @@
 import { useState, useMemo, useCallback, useRef, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { Search, X, Columns3 } from "lucide-react";
+import { Search, X, Columns3, ChevronUp, ChevronDown, ChevronsUpDown } from "lucide-react";
 import { useRouter } from "next/navigation";
 import type { Product, Category, BrandSupplier } from "@/lib/types";
 import { Dropdown } from "./dropdown";
@@ -108,6 +108,20 @@ export default function Screener({
   const [search, setSearch] = useState(initialSearch);
   const [categoryId, setCategoryId] = useState(initialCategoryId);
   const [supplierId, setSupplierId] = useState(initialSupplierId);
+  type SortKey = "name" | "purchasePrice" | "salePrice" | "inStock" | "weight" | "category" | "supplier" | "shelfLocation";
+  type SortDir = "asc" | "desc";
+  const [sortKey, setSortKey] = useState<SortKey | null>(null);
+  const [sortDir, setSortDir] = useState<SortDir>("asc");
+
+  function handleSort(key: SortKey) {
+    if (sortKey === key) {
+      setSortDir((d) => (d === "asc" ? "desc" : "asc"));
+    } else {
+      setSortKey(key);
+      setSortDir("asc");
+    }
+  }
+
   const [visibleCols, setVisibleCols] = useState<Set<ColKey>>(() => {
     try {
       const saved = localStorage.getItem("screener-cols");
@@ -151,16 +165,54 @@ export default function Screener({
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
-    return products.filter((p) => {
+    const list = products.filter((p) => {
       const matchesSearch = !q || p.name.toLowerCase().includes(q) || (p.slug ?? "").toLowerCase().includes(q);
       const matchesCategory = !categoryId || String(p.category?.id) === categoryId;
       const matchesSupplier = !supplierId || String(p.brand_supplier?.id) === supplierId;
       return matchesSearch && matchesCategory && matchesSupplier;
     });
-  }, [products, search, categoryId, supplierId]);
+
+    if (!sortKey) return list;
+
+    return [...list].sort((a, b) => {
+      let av: string | number | null | undefined;
+      let bv: string | number | null | undefined;
+      if (sortKey === "name")          { av = a.name;                    bv = b.name; }
+      else if (sortKey === "purchasePrice") { av = a.purchase_price ?? null; bv = b.purchase_price ?? null; }
+      else if (sortKey === "salePrice")     { av = a.sale_price;             bv = b.sale_price; }
+      else if (sortKey === "inStock")       { av = a.in_stock ?? null;        bv = b.in_stock ?? null; }
+      else if (sortKey === "weight")        { av = a.weight ?? "";            bv = b.weight ?? ""; }
+      else if (sortKey === "category")      { av = a.category?.name ?? "";   bv = b.category?.name ?? ""; }
+      else if (sortKey === "supplier")      { av = a.brand_supplier?.name ?? ""; bv = b.brand_supplier?.name ?? ""; }
+      else if (sortKey === "shelfLocation") { av = a.shelf_location ?? "";   bv = b.shelf_location ?? ""; }
+
+      if (av === null || av === undefined) return 1;
+      if (bv === null || bv === undefined) return -1;
+      const cmp = typeof av === "number" && typeof bv === "number"
+        ? av - bv
+        : String(av).localeCompare(String(bv));
+      return sortDir === "asc" ? cmp : -cmp;
+    });
+  }, [products, search, categoryId, supplierId, sortKey, sortDir]);
 
   const hasFilters = search || categoryId || supplierId;
   const show = (key: ColKey) => visibleCols.has(key);
+
+  function SortTh({ sk, label, align = "left" }: { sk: SortKey; label: string; align?: "left" | "right" }) {
+    const active = sortKey === sk;
+    const Icon = active ? (sortDir === "asc" ? ChevronUp : ChevronDown) : ChevronsUpDown;
+    return (
+      <th
+        onClick={() => handleSort(sk)}
+        className={`text-xs font-medium uppercase tracking-wide px-4 py-3 cursor-pointer select-none whitespace-nowrap text-${align} ${active ? "text-blue-600" : "text-slate-400 hover:text-slate-600"}`}
+      >
+        <span className={`inline-flex items-center gap-1 ${align === "right" ? "flex-row-reverse" : ""}`}>
+          {label}
+          <Icon size={12} className={active ? "text-blue-500" : "text-slate-300"} />
+        </span>
+      </th>
+    );
+  }
 
   return (
     <div>
@@ -233,16 +285,16 @@ export default function Screener({
               <tr className="border-b border-slate-100">
                 {show("no")            && <th className="text-left text-xs font-medium text-slate-400 uppercase tracking-wide px-4 py-3 w-10">No.</th>}
                 {show("image")         && <th className="text-left text-xs font-medium text-slate-400 uppercase tracking-wide px-4 py-3 w-14">Image</th>}
-                {show("name")          && <th className="text-left text-xs font-medium text-slate-400 uppercase tracking-wide px-4 py-3">Name</th>}
+                {show("name")          && <SortTh sk="name" label="Name" />}
                 {show("sizes")         && <th className="text-left text-xs font-medium text-slate-400 uppercase tracking-wide px-4 py-3">Sizes</th>}
-                {show("weight")        && <th className="text-left text-xs font-medium text-slate-400 uppercase tracking-wide px-4 py-3">Weight</th>}
+                {show("weight")        && <SortTh sk="weight" label="Weight" />}
                 {show("colors")        && <th className="text-left text-xs font-medium text-slate-400 uppercase tracking-wide px-4 py-3">Colors</th>}
-                {show("category")      && <th className="text-left text-xs font-medium text-slate-400 uppercase tracking-wide px-4 py-3">Category</th>}
-                {show("supplier")      && <th className="text-left text-xs font-medium text-slate-400 uppercase tracking-wide px-4 py-3">Supplier</th>}
-                {show("purchasePrice") && <th className="text-right text-xs font-medium text-slate-400 uppercase tracking-wide px-4 py-3">Purchase Price</th>}
-                {show("salePrice")     && <th className="text-right text-xs font-medium text-slate-400 uppercase tracking-wide px-4 py-3">Sale Price</th>}
-                {show("inStock")       && <th className="text-right text-xs font-medium text-slate-400 uppercase tracking-wide px-4 py-3">In Stock</th>}
-                {show("shelfLocation") && <th className="text-left text-xs font-medium text-slate-400 uppercase tracking-wide px-4 py-3">Shelf Location</th>}
+                {show("category")      && <SortTh sk="category" label="Category" />}
+                {show("supplier")      && <SortTh sk="supplier" label="Supplier" />}
+                {show("purchasePrice") && <SortTh sk="purchasePrice" label="Purchase Price" align="right" />}
+                {show("salePrice")     && <SortTh sk="salePrice" label="Sale Price" align="right" />}
+                {show("inStock")       && <SortTh sk="inStock" label="In Stock" align="right" />}
+                {show("shelfLocation") && <SortTh sk="shelfLocation" label="Shelf Location" />}
                 <th className="text-right text-xs font-medium text-slate-400 uppercase tracking-wide px-4 py-3">Actions</th>
               </tr>
             </thead>
