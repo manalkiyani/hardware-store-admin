@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Wrench, Package, FolderTree, Truck } from "lucide-react";
+import { Wrench, Package, FolderTree, Truck, Phone } from "lucide-react";
 import clsx from "clsx";
 
 const navItems = [
@@ -23,9 +23,12 @@ export default function Sidebar() {
         </div>
         <div>
           <span className="font-semibold text-white text-sm leading-tight block">
-            Hardware & Paint Store
+            Welcome Hardware & Paint Store
           </span>
-          <span className="text-teal-400 text-xs">0301 5012299</span>
+          <span className="flex items-center gap-1 text-teal-400 text-xs mt-0.5">
+            <Phone size={10} />
+            0301 5012299
+          </span>
         </div>
       </div>
 
