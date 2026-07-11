@@ -27,16 +27,24 @@ async function apiFetch<T>(path: string, options?: RequestInit): Promise<T> {
 
 // ── Products ─────────────────────────────────────────────────────────────────
 
+const PRODUCT_POPULATE =
+  "populate[picture]=true" +
+  "&populate[category]=true" +
+  "&populate[brand_supplier]=true" +
+  "&populate[colors]=true" +
+  "&populate[sizes][populate][variant_colors]=true" +
+  "&populate[weight_variants][populate][variant_colors]=true";
+
 export async function getProducts(): Promise<Product[]> {
   const res = await apiFetch<StrapiListResponse<Product>>(
-    "/products?populate=*&pagination[pageSize]=200"
+    `/products?${PRODUCT_POPULATE}&pagination[pageSize]=200`
   );
   return res.data;
 }
 
 export async function getProduct(id: string): Promise<Product> {
   const res = await apiFetch<StrapiSingleResponse<Product>>(
-    `/products/${id}?populate=*`
+    `/products/${id}?${PRODUCT_POPULATE}`
   );
   return res.data;
 }
