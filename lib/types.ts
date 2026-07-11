@@ -12,11 +12,21 @@ export interface StrapiImage {
 
 export type SizeUnit = "foot" | "inch" | "meter";
 export type WeightUnit = "Dabbi" | "Quarter" | "Gallon" | "Bucket";
+export type VariantType = "none" | "weight" | "size";
 
 export interface SizeEntry {
   id?: number;
   value: number;
   unit: SizeUnit;
+  purchase_price?: number | null;
+  sale_price?: number | null;
+}
+
+export interface WeightVariant {
+  id?: number;
+  weight: WeightUnit;
+  purchase_price?: number | null;
+  sale_price?: number | null;
 }
 
 export interface ColorEntry {
@@ -51,12 +61,13 @@ export interface Product {
   description?: string;
   picture?: StrapiImage | null;
   code?: string;
+  variant_type?: VariantType;
   sizes?: SizeEntry[];
+  weight_variants?: WeightVariant[];
   colors?: ColorEntry[];
   material?: string;
-  purchase_price?: number;
-  sale_price: number;
-  weight?: WeightUnit | null;
+  purchase_price?: number | null;
+  sale_price?: number | null;
   in_stock?: number;
   shelf_location?: string;
   last_updated?: string;
@@ -87,13 +98,14 @@ export interface ProductFormData {
   description?: string;
   code?: string;
   material?: string;
-  purchase_price?: number | string;
-  sale_price: number | string;
-  weight?: WeightUnit | null;
+  variant_type: VariantType;
+  purchase_price?: number | string | null;
+  sale_price?: number | string | null;
+  weight_variants?: { weight: WeightUnit; purchase_price?: number | null; sale_price?: number | null }[];
   in_stock?: number | string;
   shelf_location?: string;
   last_updated?: string;
-  sizes?: { value: number; unit: SizeUnit }[];
+  sizes?: { value: number; unit: SizeUnit; purchase_price?: number | null; sale_price?: number | null }[];
   colors?: { value: string }[];
   category?: number | null;
   brand_supplier?: number | null;

@@ -5,7 +5,27 @@ import Link from "next/link";
 import Image from "next/image";
 import { Search, X, Columns3, ChevronUp, ChevronDown, ChevronsUpDown } from "lucide-react";
 import { useRouter } from "next/navigation";
-import type { Product, Category, BrandSupplier } from "@/lib/types";
+import type { Product, Category, BrandSupplier, WeightVariant, SizeEntry } from "@/lib/types";
+
+function lowestSalePrice(p: Product): number | null {
+  if (p.variant_type === "weight" && p.weight_variants?.length) {
+    const prices = p.weight_variants.map((v: WeightVariant) => v.sale_price ?? p.sale_price).filter((x): x is number => x != null);
+    return prices.length ? Math.min(...prices) : p.sale_price ?? null;
+  }
+  if (p.variant_type === "size" && p.sizes?.length) {
+    const prices = p.sizes.map((s: SizeEntry) => s.sale_price ?? p.sale_price).filter((x): x is number => x != null);
+    return prices.length ? Math.min(...prices) : p.sale_price ?? null;
+  }
+  return p.sale_price ?? null;
+}
+
+function priceDisplay(p: Product): string {
+  if (p.variant_type === "none" || !p.variant_type) {
+    return p.sale_price != null ? `Rs ${p.sale_price.toLocaleString()}` : "—";
+  }
+  const low = lowestSalePrice(p);
+  return low != null ? `from Rs ${low.toLocaleString()}` : "—";
+}
 import { Dropdown } from "./dropdown";
 import ProductActions from "./product-actions";
 
@@ -179,9 +199,9 @@ export default function Screener({
       let bv: string | number | null | undefined;
       if (sortKey === "name")          { av = a.name;                    bv = b.name; }
       else if (sortKey === "purchasePrice") { av = a.purchase_price ?? null; bv = b.purchase_price ?? null; }
-      else if (sortKey === "salePrice")     { av = a.sale_price;             bv = b.sale_price; }
+      else if (sortKey === "salePrice")     { av = lowestSalePrice(a);       bv = lowestSalePrice(b); }
       else if (sortKey === "inStock")       { av = a.in_stock ?? null;        bv = b.in_stock ?? null; }
-      else if (sortKey === "weight")        { av = a.weight ?? "";            bv = b.weight ?? ""; }
+      else if (sortKey === "weight")        { av = a.weight_variants?.[0]?.weight ?? ""; bv = b.weight_variants?.[0]?.weight ?? ""; }
       else if (sortKey === "category")      { av = a.category?.name ?? "";   bv = b.category?.name ?? ""; }
       else if (sortKey === "supplier")      { av = a.brand_supplier?.name ?? ""; bv = b.brand_supplier?.name ?? ""; }
       else if (sortKey === "shelfLocation") { av = a.shelf_location ?? "";   bv = b.shelf_location ?? ""; }
@@ -357,10 +377,12 @@ export default function Screener({
 
                   {show("weight") && (
                     <td className="px-4 py-3">
-                      {product.weight ? (
-                        <span className="inline-block px-2 py-0.5 bg-slate-100 text-slate-600 text-xs rounded-full">
-                          {product.weight}
-                        </span>
+                      {product.weight_variants && product.weight_variants.length > 0 ? (
+                        <div className="flex flex-wrap gap-1">
+                          {product.weight_variants.map((v, idx) => (
+                            <span key={idx} className="inline-block px-2 py-0.5 bg-slate-100 text-slate-600 text-xs rounded-full">{v.weight}</span>
+                          ))}
+                        </div>
                       ) : (
                         <span className="text-slate-300 text-sm">—</span>
                       )}
@@ -413,8 +435,8 @@ export default function Screener({
 
                   {show("salePrice") && (
                     <td className="px-4 py-3 text-sm text-slate-900 text-right font-medium">
-                      {product.sale_price != null
-                        ? `Rs ${product.sale_price.toLocaleString()}`
+                      {priceDisplay(product) !== "—"
+                        ? priceDisplay(product)
                         : <span className="text-slate-300 font-normal">—</span>}
                     </td>
                   )}

@@ -4,11 +4,14 @@ import { useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
-import { Upload, Save, AlertCircle, Plus, X, CheckCircle, ArrowLeft } from "lucide-react";
+import { Upload, Save, AlertCircle, Plus, X, CheckCircle, ArrowLeft, Trash2 } from "lucide-react";
 import clsx from "clsx";
 import ChipInput from "./chip-input";
 import { Dropdown } from "./dropdown";
-import type { Product, Category, BrandSupplier, SizeUnit, SizeEntry, WeightUnit } from "@/lib/types";
+import type {
+  Product, Category, BrandSupplier,
+  SizeUnit, SizeEntry, WeightUnit, WeightVariant, VariantType,
+} from "@/lib/types";
 import { createProduct, updateProduct, uploadProductImage } from "@/lib/api";
 
 interface ProductFormProps {
@@ -23,11 +26,7 @@ const WEIGHT_UNITS: WeightUnit[] = ["Dabbi", "Quarter", "Gallon", "Bucket"];
 type SaveState = "idle" | "saving" | "saved";
 
 function slugify(str: string): string {
-  return str
-    .toLowerCase()
-    .trim()
-    .replace(/[^a-z0-9\s-]/g, "")
-    .replace(/\s+/g, "-");
+  return str.toLowerCase().trim().replace(/[^a-z0-9\s-]/g, "").replace(/\s+/g, "-");
 }
 
 function buildCategoryLabel(cat: Category, all: Category[]): string {
@@ -38,13 +37,120 @@ function buildCategoryLabel(cat: Category, all: Category[]): string {
   return cat.name;
 }
 
-// ── Size editor ──────────────────────────────────────────────────────────────
-function SizeEditor({
-  sizes,
-  onChange,
+// ── Price pair input ──────────────────────────────────────────────────────────
+function PricePair({
+  purchase, sale,
+  onPurchase, onSale,
+  required = false,
+}: {
+  purchase: string; sale: string;
+  onPurchase: (v: string) => void; onSale: (v: string) => void;
+  required?: boolean;
+}) {
+  return (
+    <div className="grid grid-cols-2 gap-3">
+      <div>
+        <label className="block text-xs text-slate-400 mb-1">Purchase Price</label>
+        <div className="relative">
+          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm">Rs</span>
+          <input type="number" min="0" step="0.01" value={purchase} onChange={(e) => onPurchase(e.target.value)} placeholder="0.00"
+            className="w-full pl-9 pr-3 py-2 border border-slate-200 rounded-lg text-sm outline-none focus:border-slate-400 focus:ring-1 focus:ring-slate-200" />
+        </div>
+      </div>
+      <div>
+        <label className="block text-xs text-slate-400 mb-1">
+          Sale Price {required && <span className="text-red-500">*</span>}
+        </label>
+        <div className="relative">
+          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm">Rs</span>
+          <input type="number" min="0" step="0.01" value={sale} onChange={(e) => onSale(e.target.value)} placeholder="0.00"
+            className="w-full pl-9 pr-3 py-2 border border-slate-200 rounded-lg text-sm outline-none focus:border-slate-400 focus:ring-1 focus:ring-slate-200" />
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ── Weight variant editor ─────────────────────────────────────────────────────
+function WeightVariantEditor({
+  variants, onChange,
+}: {
+  variants: WeightVariant[];
+  onChange: (v: WeightVariant[]) => void;
+}) {
+  const [addWeight, setAddWeight] = useState<WeightUnit | "">("");
+
+  function add() {
+    if (!addWeight) return;
+    onChange([...variants, { weight: addWeight as WeightUnit, purchase_price: null, sale_price: null }]);
+    setAddWeight("");
+  }
+
+  function remove(idx: number) {
+    onChange(variants.filter((_, i) => i !== idx));
+  }
+
+  function update(idx: number, field: "purchase_price" | "sale_price", val: string) {
+    onChange(variants.map((v, i) =>
+      i === idx ? { ...v, [field]: val === "" ? null : parseFloat(val) } : v
+    ));
+  }
+
+  const usedWeights = new Set(variants.map((v) => v.weight));
+
+  return (
+    <div className="space-y-3">
+      {variants.map((v, i) => (
+        <div key={i} className="flex items-center gap-2 p-3 bg-slate-50 rounded-lg">
+          <span className="text-sm font-medium text-slate-700 w-20 flex-shrink-0">{v.weight}</span>
+          <div className="flex-1 grid grid-cols-2 gap-2">
+            <div className="relative">
+              <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400 text-xs">Rs</span>
+              <input type="number" min="0" step="0.01"
+                value={v.purchase_price ?? ""}
+                onChange={(e) => update(i, "purchase_price", e.target.value)}
+                placeholder="Buy"
+                className="w-full pl-8 pr-2 py-1.5 border border-slate-200 rounded-md text-sm outline-none focus:border-slate-400 bg-white"
+              />
+            </div>
+            <div className="relative">
+              <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400 text-xs">Rs</span>
+              <input type="number" min="0" step="0.01"
+                value={v.sale_price ?? ""}
+                onChange={(e) => update(i, "sale_price", e.target.value)}
+                placeholder="Sell"
+                className="w-full pl-8 pr-2 py-1.5 border border-slate-200 rounded-md text-sm outline-none focus:border-slate-400 bg-white"
+              />
+            </div>
+          </div>
+          <button type="button" onClick={() => remove(i)} className="p-1 text-slate-300 hover:text-red-500 transition-colors flex-shrink-0">
+            <Trash2 size={14} />
+          </button>
+        </div>
+      ))}
+
+      <div className="flex items-center gap-2">
+        <Dropdown
+          value={addWeight}
+          onChange={(v) => setAddWeight(v as WeightUnit)}
+          placeholder="Select weight…"
+          options={WEIGHT_UNITS.filter((w) => !usedWeights.has(w)).map((w) => ({ value: w, label: w }))}
+        />
+        <button type="button" onClick={add} disabled={!addWeight}
+          className="inline-flex items-center gap-1 px-3 py-1.5 border border-slate-200 rounded-lg text-sm text-slate-600 hover:bg-slate-50 disabled:opacity-40 transition-colors">
+          <Plus size={13} /> Add
+        </button>
+      </div>
+    </div>
+  );
+}
+
+// ── Size variant editor ───────────────────────────────────────────────────────
+function SizeVariantEditor({
+  sizes, onChange,
 }: {
   sizes: SizeEntry[];
-  onChange: (sizes: SizeEntry[]) => void;
+  onChange: (v: SizeEntry[]) => void;
 }) {
   const [addValue, setAddValue] = useState("");
   const [addUnit, setAddUnit] = useState<SizeUnit>("inch");
@@ -52,7 +158,7 @@ function SizeEditor({
   function add() {
     const num = parseFloat(addValue);
     if (isNaN(num) || num <= 0) return;
-    onChange([...sizes, { value: num, unit: addUnit }]);
+    onChange([...sizes, { value: num, unit: addUnit, purchase_price: null, sale_price: null }]);
     setAddValue("");
   }
 
@@ -60,52 +166,54 @@ function SizeEditor({
     onChange(sizes.filter((_, i) => i !== idx));
   }
 
+  function update(idx: number, field: "purchase_price" | "sale_price", val: string) {
+    onChange(sizes.map((s, i) =>
+      i === idx ? { ...s, [field]: val === "" ? null : parseFloat(val) } : s
+    ));
+  }
+
   return (
     <div className="space-y-3">
-      {/* existing chips */}
-      {sizes.length > 0 && (
-        <div className="flex flex-wrap gap-2">
-          {sizes.map((s, i) => (
-            <span
-              key={i}
-              className="inline-flex items-center gap-1.5 px-3 py-1 bg-slate-100 text-slate-700 text-sm rounded-full"
-            >
-              {s.value} {s.unit}
-              <button
-                type="button"
-                onClick={() => remove(i)}
-                className="text-slate-400 hover:text-slate-700 transition-colors"
-              >
-                <X size={12} />
-              </button>
-            </span>
-          ))}
+      {sizes.map((s, i) => (
+        <div key={i} className="flex items-center gap-2 p-3 bg-slate-50 rounded-lg">
+          <span className="text-sm font-medium text-slate-700 w-20 flex-shrink-0">{s.value} {s.unit}</span>
+          <div className="flex-1 grid grid-cols-2 gap-2">
+            <div className="relative">
+              <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400 text-xs">Rs</span>
+              <input type="number" min="0" step="0.01"
+                value={s.purchase_price ?? ""}
+                onChange={(e) => update(i, "purchase_price", e.target.value)}
+                placeholder="Buy"
+                className="w-full pl-8 pr-2 py-1.5 border border-slate-200 rounded-md text-sm outline-none focus:border-slate-400 bg-white"
+              />
+            </div>
+            <div className="relative">
+              <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400 text-xs">Rs</span>
+              <input type="number" min="0" step="0.01"
+                value={s.sale_price ?? ""}
+                onChange={(e) => update(i, "sale_price", e.target.value)}
+                placeholder="Sell"
+                className="w-full pl-8 pr-2 py-1.5 border border-slate-200 rounded-md text-sm outline-none focus:border-slate-400 bg-white"
+              />
+            </div>
+          </div>
+          <button type="button" onClick={() => remove(i)} className="p-1 text-slate-300 hover:text-red-500 transition-colors flex-shrink-0">
+            <Trash2 size={14} />
+          </button>
         </div>
-      )}
-      {/* add row */}
+      ))}
+
       <div className="flex items-center gap-2">
-        <input
-          type="number"
-          min="0"
-          step="any"
-          value={addValue}
+        <input type="number" min="0" step="any" value={addValue}
           onChange={(e) => setAddValue(e.target.value)}
           onKeyDown={(e) => e.key === "Enter" && (e.preventDefault(), add())}
           placeholder="e.g. 2.5"
-          className="w-28 px-3 py-1.5 border border-slate-200 rounded-lg text-sm outline-none focus:border-slate-400 focus:ring-1 focus:ring-slate-200"
+          className="w-24 px-3 py-1.5 border border-slate-200 rounded-lg text-sm outline-none focus:border-slate-400"
         />
-        <Dropdown
-          value={addUnit}
-          onChange={(v) => setAddUnit(v as SizeUnit)}
-          placeholder="inch"
-          clearable={false}
-          options={SIZE_UNITS.map((u) => ({ value: u, label: u }))}
-        />
-        <button
-          type="button"
-          onClick={add}
-          className="inline-flex items-center gap-1 px-3 py-1.5 border border-slate-200 rounded-lg text-sm text-slate-600 hover:bg-slate-50 transition-colors"
-        >
+        <Dropdown value={addUnit} onChange={(v) => setAddUnit(v as SizeUnit)} placeholder="inch" clearable={false}
+          options={SIZE_UNITS.map((u) => ({ value: u, label: u }))} />
+        <button type="button" onClick={add}
+          className="inline-flex items-center gap-1 px-3 py-1.5 border border-slate-200 rounded-lg text-sm text-slate-600 hover:bg-slate-50 transition-colors">
           <Plus size={13} /> Add
         </button>
       </div>
@@ -114,11 +222,7 @@ function SizeEditor({
 }
 
 // ── Main form ─────────────────────────────────────────────────────────────────
-export default function ProductForm({
-  product,
-  categories,
-  suppliers,
-}: ProductFormProps) {
+export default function ProductForm({ product, categories, suppliers }: ProductFormProps) {
   const router = useRouter();
   const isEdit = !!product;
 
@@ -126,27 +230,18 @@ export default function ProductForm({
   const [description, setDescription] = useState(product?.description ?? "");
   const [code, setCode] = useState(product?.code ?? "");
   const [material, setMaterial] = useState(product?.material ?? "");
-  const [purchasePrice, setPurchasePrice] = useState(
-    product?.purchase_price?.toString() ?? ""
-  );
-  const [salePrice, setSalePrice] = useState(
-    product?.sale_price?.toString() ?? ""
-  );
-  const [inStock, setInStock] = useState(
-    product?.in_stock?.toString() ?? ""
-  );
-  const [shelfLocation, setShelfLocation] = useState(product?.shelf_location ?? "");
-  const [weight, setWeight] = useState<string>(product?.weight ?? "");
+
+  const [variantType, setVariantType] = useState<VariantType>(product?.variant_type ?? "none");
+  const [purchasePrice, setPurchasePrice] = useState(product?.purchase_price?.toString() ?? "");
+  const [salePrice, setSalePrice] = useState(product?.sale_price?.toString() ?? "");
+  const [weightVariants, setWeightVariants] = useState<WeightVariant[]>(product?.weight_variants ?? []);
   const [sizes, setSizes] = useState<SizeEntry[]>(product?.sizes ?? []);
-  const [colors, setColors] = useState<string[]>(
-    product?.colors?.map((c) => c.value) ?? []
-  );
-  const [categoryId, setCategoryId] = useState<string>(
-    product?.category?.id?.toString() ?? ""
-  );
-  const [supplierId, setSupplierId] = useState<string>(
-    product?.brand_supplier?.id?.toString() ?? ""
-  );
+
+  const [inStock, setInStock] = useState(product?.in_stock?.toString() ?? "");
+  const [shelfLocation, setShelfLocation] = useState(product?.shelf_location ?? "");
+  const [colors, setColors] = useState<string[]>(product?.colors?.map((c) => c.value) ?? []);
+  const [categoryId, setCategoryId] = useState<string>(product?.category?.id?.toString() ?? "");
+  const [supplierId, setSupplierId] = useState<string>(product?.brand_supplier?.id?.toString() ?? "");
 
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
@@ -171,7 +266,8 @@ export default function ProductForm({
     e.preventDefault();
     setError(null);
 
-    if (!salePrice) {
+    // Validate: need at least one sale price
+    if (variantType === "none" && !salePrice) {
       setError("Sale price is required.");
       return;
     }
@@ -184,14 +280,21 @@ export default function ProductForm({
         description: description || undefined,
         code: code || undefined,
         material: material || undefined,
-        purchase_price: purchasePrice ? parseFloat(purchasePrice) : undefined,
-        sale_price: parseFloat(salePrice),
-        weight: (weight as WeightUnit) || null,
+        variant_type: variantType,
+        purchase_price: variantType === "none" && purchasePrice ? parseFloat(purchasePrice) : null,
+        sale_price: variantType === "none" && salePrice ? parseFloat(salePrice) : null,
+        weight_variants: variantType === "weight"
+          ? weightVariants.map(({ weight, purchase_price, sale_price }) => ({ weight, purchase_price, sale_price }))
+          : [],
+        sizes: variantType === "size"
+          ? sizes.map(({ value, unit, purchase_price, sale_price }) => ({ value, unit, purchase_price, sale_price }))
+          : variantType === "none"
+          ? sizes.map(({ value, unit }) => ({ value, unit, purchase_price: null, sale_price: null }))
+          : [],
+        colors: colors.map((v) => ({ value: v })),
         in_stock: inStock ? parseInt(inStock, 10) : undefined,
         shelf_location: shelfLocation || undefined,
         last_updated: today,
-        sizes: sizes.map(({ value, unit }) => ({ value, unit })),
-        colors: colors.map((v) => ({ value: v })),
         category: categoryId ? parseInt(categoryId, 10) : null,
         brand_supplier: supplierId ? parseInt(supplierId, 10) : null,
       };
@@ -208,7 +311,6 @@ export default function ProductForm({
       }
 
       setSaveState("saved");
-      // Show success state briefly, then navigate with a smooth transition
       await new Promise((resolve) => setTimeout(resolve, 900));
       router.push("/products");
       router.refresh();
@@ -218,23 +320,18 @@ export default function ProductForm({
     }
   }
 
-  const existingImageUrl = product?.picture?.url
-    ? `http://localhost:1337${product.picture.url}`
-    : null;
-
+  const existingImageUrl = product?.picture?.url ? `http://localhost:1337${product.picture.url}` : null;
   const displayImage = imagePreview ?? existingImageUrl;
+
+  const inputCls = "w-full px-3 py-2 border border-slate-200 rounded-lg text-sm outline-none focus:border-slate-400 focus:ring-1 focus:ring-slate-200";
 
   return (
     <>
-      {/* ── Save overlay ─────────────────────────────────────────────────── */}
-      <div
-        className={clsx(
-          "fixed inset-0 z-50 flex flex-col items-center justify-center gap-4 transition-all duration-300",
-          saveState === "idle"
-            ? "opacity-0 pointer-events-none"
-            : "opacity-100 pointer-events-auto bg-white/80 backdrop-blur-sm"
-        )}
-      >
+      {/* Save overlay */}
+      <div className={clsx(
+        "fixed inset-0 z-50 flex flex-col items-center justify-center gap-4 transition-all duration-300",
+        saveState === "idle" ? "opacity-0 pointer-events-none" : "opacity-100 pointer-events-auto bg-white/80 backdrop-blur-sm"
+      )}>
         {saveState === "saving" && (
           <>
             <div className="w-10 h-10 border-[3px] border-teal-100 border-t-teal-700 rounded-full animate-spin" />
@@ -243,7 +340,7 @@ export default function ProductForm({
         )}
         {saveState === "saved" && (
           <>
-            <div className="w-12 h-12 rounded-full bg-emerald-100 flex items-center justify-center animate-[scale-in_0.2s_ease-out]">
+            <div className="w-12 h-12 rounded-full bg-emerald-100 flex items-center justify-center">
               <CheckCircle size={24} className="text-emerald-600" />
             </div>
             <p className="text-sm font-medium text-slate-700">Saved!</p>
@@ -255,112 +352,142 @@ export default function ProductForm({
         {/* Header */}
         <div className="flex items-center justify-between mb-6">
           <div className="flex items-center gap-4">
-            <Link
-              href="/products"
-              className="inline-flex items-center gap-1.5 text-sm text-slate-500 hover:text-teal-700 transition-colors"
-            >
-              <ArrowLeft size={15} />
-              Back
+            <Link href="/products" className="inline-flex items-center gap-1.5 text-sm text-slate-500 hover:text-blue-600 transition-colors">
+              <ArrowLeft size={15} /> Back
             </Link>
             <div className="w-px h-6 bg-slate-200" />
             <div>
-              <h1 className="text-xl font-semibold text-slate-900">
-                {isEdit ? "Edit Product" : "New Product"}
-              </h1>
-              <p className="text-sm text-slate-500 mt-0.5">
-                {isEdit
-                  ? `Editing: ${product.name}`
-                  : "Add a new product to the catalog"}
-              </p>
+              <h1 className="text-xl font-semibold text-slate-900">{isEdit ? "Edit Product" : "New Product"}</h1>
+              <p className="text-sm text-slate-500 mt-0.5">{isEdit ? `Editing: ${product.name}` : "Add a new product to the catalog"}</p>
             </div>
           </div>
-          <button
-            type="submit"
-            disabled={saveState !== "idle"}
-            className={clsx(
-              "inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg",
-              "hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-            )}
-          >
-            <Save size={15} />
-            Save Product
+          <button type="submit" disabled={saveState !== "idle"}
+            className={clsx("inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg",
+              "hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed")}>
+            <Save size={15} /> Save Product
           </button>
         </div>
 
         {error && (
           <div className="flex items-center gap-2 px-4 py-3 bg-red-50 border border-red-200 text-red-700 text-sm rounded-lg mb-6">
-            <AlertCircle size={15} />
-            {error}
+            <AlertCircle size={15} /> {error}
           </div>
         )}
 
         <div className="grid grid-cols-3 gap-5">
-          {/* LEFT — single box */}
+          {/* LEFT */}
           <div className="col-span-2">
             <div className="bg-white rounded-xl border border-slate-200 divide-y divide-slate-100">
 
               {/* Name */}
               <div className="px-4 py-3">
-                <label className="block text-xs font-medium text-slate-500 mb-1">
-                  Name <span className="text-red-500">*</span>
-                </label>
-                <input
-                  type="text"
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  required
-                  placeholder="e.g. Stainless Steel Bolt Set"
-                  className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm outline-none focus:border-slate-400 focus:ring-1 focus:ring-slate-200"
-                />
+                <label className="block text-xs font-medium text-slate-500 mb-1">Name <span className="text-red-500">*</span></label>
+                <input type="text" value={name} onChange={(e) => setName(e.target.value)} required
+                  placeholder="e.g. Stainless Steel Bolt Set" className={inputCls} />
               </div>
 
-              {/* Weight */}
+              {/* Variant type toggle */}
               <div className="px-4 py-3">
-                <label className="block text-xs font-medium text-slate-500 mb-1">
-                  Weight
-                </label>
-                <Dropdown
-                  value={weight}
-                  onChange={setWeight}
-                  placeholder="Select weight…"
-                  fullWidth
-                  options={WEIGHT_UNITS.map((w) => ({ value: w, label: w }))}
-                />
-              </div>
-
-              {/* Pricing */}
-              <div className="px-4 py-3">
-                <p className="text-xs font-medium text-slate-500 mb-2">Pricing</p>
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <label className="block text-xs text-slate-400 mb-1">Purchase Price</label>
-                    <div className="relative">
-                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm">Rs</span>
-                      <input
-                        type="number" min="0" step="0.01"
-                        value={purchasePrice}
-                        onChange={(e) => setPurchasePrice(e.target.value)}
-                        placeholder="0.00"
-                        className="w-full pl-9 pr-3 py-2 border border-slate-200 rounded-lg text-sm outline-none focus:border-slate-400 focus:ring-1 focus:ring-slate-200"
-                      />
-                    </div>
-                  </div>
-                  <div>
-                    <label className="block text-xs text-slate-400 mb-1">Sale Price <span className="text-red-500">*</span></label>
-                    <div className="relative">
-                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm">Rs</span>
-                      <input
-                        type="number" min="0" step="0.01"
-                        value={salePrice}
-                        onChange={(e) => setSalePrice(e.target.value)}
-                        required
-                        placeholder="0.00"
-                        className="w-full pl-9 pr-3 py-2 border border-slate-200 rounded-lg text-sm outline-none focus:border-slate-400 focus:ring-1 focus:ring-slate-200"
-                      />
-                    </div>
-                  </div>
+                <p className="text-xs font-medium text-slate-500 mb-2">Pricing Type</p>
+                <div className="flex gap-2">
+                  {(["none", "weight", "size"] as VariantType[]).map((t) => (
+                    <button key={t} type="button" onClick={() => setVariantType(t)}
+                      className={clsx("px-3 py-1.5 rounded-lg text-sm font-medium border transition-colors", variantType === t
+                        ? "bg-blue-600 text-white border-blue-600"
+                        : "bg-white text-slate-600 border-slate-200 hover:border-slate-300")}>
+                      {t === "none" ? "Single Price" : t === "weight" ? "By Weight" : "By Size"}
+                    </button>
+                  ))}
                 </div>
               </div>
+
+              {/* Pricing — single */}
+              {variantType === "none" && (
+                <div className="px-4 py-3">
+                  <p className="text-xs font-medium text-slate-500 mb-2">Pricing</p>
+                  <PricePair purchase={purchasePrice} sale={salePrice}
+                    onPurchase={setPurchasePrice} onSale={setSalePrice} required />
+                </div>
+              )}
+
+              {/* Pricing — by weight */}
+              {variantType === "weight" && (
+                <div className="px-4 py-3">
+                  <div className="flex items-center justify-between mb-2">
+                    <p className="text-xs font-medium text-slate-500">Weight Variants</p>
+                    <span className="text-xs text-slate-400">Leave price blank to use product default</span>
+                  </div>
+                  <WeightVariantEditor variants={weightVariants} onChange={setWeightVariants} />
+                  {/* fallback price */}
+                  <div className="mt-4 pt-3 border-t border-slate-100">
+                    <p className="text-xs text-slate-400 mb-2">Default / Fallback Price</p>
+                    <PricePair purchase={purchasePrice} sale={salePrice} onPurchase={setPurchasePrice} onSale={setSalePrice} />
+                  </div>
+                </div>
+              )}
+
+              {/* Pricing — by size */}
+              {variantType === "size" && (
+                <div className="px-4 py-3">
+                  <div className="flex items-center justify-between mb-2">
+                    <p className="text-xs font-medium text-slate-500">Size Variants</p>
+                    <span className="text-xs text-slate-400">Leave price blank to use product default</span>
+                  </div>
+                  <SizeVariantEditor sizes={sizes} onChange={setSizes} />
+                  {/* fallback price */}
+                  <div className="mt-4 pt-3 border-t border-slate-100">
+                    <p className="text-xs text-slate-400 mb-2">Default / Fallback Price</p>
+                    <PricePair purchase={purchasePrice} sale={salePrice} onPurchase={setPurchasePrice} onSale={setSalePrice} />
+                  </div>
+                </div>
+              )}
+
+              {/* Sizes (non-variant — shown only when type = none) */}
+              {variantType === "none" && (
+                <div className="px-4 py-3">
+                  <p className="text-xs font-medium text-slate-500 mb-2">Sizes</p>
+                  <div className="flex flex-wrap gap-2 mb-2">
+                    {sizes.map((s, i) => (
+                      <span key={i} className="inline-flex items-center gap-1.5 px-3 py-1 bg-slate-100 text-slate-700 text-sm rounded-full">
+                        {s.value} {s.unit}
+                        <button type="button" onClick={() => setSizes(sizes.filter((_, idx) => idx !== i))}
+                          className="text-slate-400 hover:text-slate-700 transition-colors"><X size={12} /></button>
+                      </span>
+                    ))}
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <input type="number" min="0" step="any" placeholder="e.g. 2.5"
+                      id="size-add-val"
+                      className="w-24 px-3 py-1.5 border border-slate-200 rounded-lg text-sm outline-none focus:border-slate-400"
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter") {
+                          e.preventDefault();
+                          const inp = e.currentTarget;
+                          const num = parseFloat(inp.value);
+                          if (!isNaN(num) && num > 0) {
+                            setSizes([...sizes, { value: num, unit: "inch" }]);
+                            inp.value = "";
+                          }
+                        }
+                      }}
+                    />
+                    <Dropdown value="inch" onChange={() => {}} placeholder="inch" clearable={false}
+                      options={SIZE_UNITS.map((u) => ({ value: u, label: u }))} />
+                    <button type="button"
+                      onClick={() => {
+                        const inp = document.getElementById("size-add-val") as HTMLInputElement;
+                        const num = parseFloat(inp?.value ?? "");
+                        if (!isNaN(num) && num > 0) {
+                          setSizes([...sizes, { value: num, unit: "inch" }]);
+                          inp.value = "";
+                        }
+                      }}
+                      className="inline-flex items-center gap-1 px-3 py-1.5 border border-slate-200 rounded-lg text-sm text-slate-600 hover:bg-slate-50 transition-colors">
+                      <Plus size={13} /> Add
+                    </button>
+                  </div>
+                </div>
+              )}
 
               {/* Inventory */}
               <div className="px-4 py-3">
@@ -368,31 +495,13 @@ export default function ProductForm({
                 <div className="grid grid-cols-2 gap-3">
                   <div>
                     <label className="block text-xs text-slate-400 mb-1">In Stock</label>
-                    <input
-                      type="number" min="0"
-                      value={inStock}
-                      onChange={(e) => setInStock(e.target.value)}
-                      placeholder="0"
-                      className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm outline-none focus:border-slate-400 focus:ring-1 focus:ring-slate-200"
-                    />
+                    <input type="number" min="0" value={inStock} onChange={(e) => setInStock(e.target.value)} placeholder="0" className={inputCls} />
                   </div>
                   <div>
                     <label className="block text-xs text-slate-400 mb-1">Shelf Location</label>
-                    <input
-                      type="text"
-                      value={shelfLocation}
-                      onChange={(e) => setShelfLocation(e.target.value)}
-                      placeholder="e.g. A3-Row2"
-                      className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm outline-none focus:border-slate-400 focus:ring-1 focus:ring-slate-200"
-                    />
+                    <input type="text" value={shelfLocation} onChange={(e) => setShelfLocation(e.target.value)} placeholder="e.g. A3-Row2" className={inputCls} />
                   </div>
                 </div>
-              </div>
-
-              {/* Sizes */}
-              <div className="px-4 py-3">
-                <p className="text-xs font-medium text-slate-500 mb-2">Sizes</p>
-                <SizeEditor sizes={sizes} onChange={setSizes} />
               </div>
 
               {/* Colors */}
@@ -404,25 +513,15 @@ export default function ProductForm({
               {/* Description */}
               <div className="px-4 py-3">
                 <label className="block text-xs font-medium text-slate-500 mb-1">Description</label>
-                <textarea
-                  value={description}
-                  onChange={(e) => setDescription(e.target.value)}
-                  rows={3}
+                <textarea value={description} onChange={(e) => setDescription(e.target.value)} rows={3}
                   placeholder="Describe the product…"
-                  className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm outline-none focus:border-slate-400 focus:ring-1 focus:ring-slate-200 resize-none"
-                />
+                  className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm outline-none focus:border-slate-400 focus:ring-1 focus:ring-slate-200 resize-none" />
               </div>
 
               {/* Material */}
               <div className="px-4 py-3">
                 <label className="block text-xs font-medium text-slate-500 mb-1">Material</label>
-                <input
-                  type="text"
-                  value={material}
-                  onChange={(e) => setMaterial(e.target.value)}
-                  placeholder="e.g. Stainless Steel"
-                  className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm outline-none focus:border-slate-400 focus:ring-1 focus:ring-slate-200"
-                />
+                <input type="text" value={material} onChange={(e) => setMaterial(e.target.value)} placeholder="e.g. Stainless Steel" className={inputCls} />
               </div>
 
             </div>
@@ -431,38 +530,18 @@ export default function ProductForm({
           {/* RIGHT */}
           <div className="col-span-1 space-y-3">
 
-            {/* Code above image */}
             <div className="bg-white rounded-xl border border-slate-200 px-4 py-3">
               <label className="block text-xs font-medium text-slate-500 mb-1">Code / SKU</label>
-              <input
-                type="text"
-                value={code}
-                onChange={(e) => setCode(e.target.value)}
-                placeholder="e.g. SKU-001"
-                className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm outline-none focus:border-slate-400 focus:ring-1 focus:ring-slate-200"
-              />
+              <input type="text" value={code} onChange={(e) => setCode(e.target.value)} placeholder="e.g. SKU-001" className={inputCls} />
             </div>
 
-            {/* Image */}
             <div className="bg-white rounded-xl border border-slate-200 p-3">
               <p className="text-xs font-medium text-slate-500 mb-2">Image</p>
-              <div
-                onClick={() => fileInputRef.current?.click()}
-                className={clsx(
-                  "border-2 border-dashed border-slate-200 rounded-lg overflow-hidden cursor-pointer",
-                  "hover:border-slate-400 transition-colors",
-                  displayImage ? "aspect-square" : "aspect-video"
-                )}
-              >
+              <div onClick={() => fileInputRef.current?.click()}
+                className={clsx("border-2 border-dashed border-slate-200 rounded-lg overflow-hidden cursor-pointer hover:border-slate-400 transition-colors",
+                  displayImage ? "aspect-square" : "aspect-video")}>
                 {displayImage ? (
-                  <Image
-                    src={displayImage}
-                    alt="Product"
-                    width={400}
-                    height={400}
-                    className="w-full h-full object-cover"
-                    unoptimized
-                  />
+                  <Image src={displayImage} alt="Product" width={400} height={400} className="w-full h-full object-cover" unoptimized />
                 ) : (
                   <div className="flex flex-col items-center justify-center h-full gap-2 text-slate-400 py-8">
                     <Upload size={20} />
@@ -474,40 +553,21 @@ export default function ProductForm({
               {displayImage && <p className="text-xs text-slate-400 mt-2 text-center">Click to change</p>}
             </div>
 
-            {/* Category + Supplier + Last Updated — one box */}
             <div className="bg-white rounded-xl border border-slate-200 divide-y divide-slate-100">
               <div className="px-4 py-3">
                 <label className="block text-xs font-medium text-slate-500 mb-1">Category</label>
-                <Dropdown
-                  value={categoryId}
-                  onChange={setCategoryId}
-                  placeholder="— None —"
-                  fullWidth
-                  options={categories.map((cat) => ({
-                    value: cat.id.toString(),
-                    label: buildCategoryLabel(cat, categories),
-                    indent: !!cat.parent_category,
-                  }))}
-                />
+                <Dropdown value={categoryId} onChange={setCategoryId} placeholder="— None —" fullWidth
+                  options={categories.map((cat) => ({ value: cat.id.toString(), label: buildCategoryLabel(cat, categories), indent: !!cat.parent_category }))} />
               </div>
               <div className="px-4 py-3">
                 <label className="block text-xs font-medium text-slate-500 mb-1">Brand / Supplier</label>
-                <Dropdown
-                  value={supplierId}
-                  onChange={setSupplierId}
-                  placeholder="— None —"
-                  fullWidth
-                  options={suppliers.map((s) => ({ value: s.id.toString(), label: s.name }))}
-                />
+                <Dropdown value={supplierId} onChange={setSupplierId} placeholder="— None —" fullWidth
+                  options={suppliers.map((s) => ({ value: s.id.toString(), label: s.name }))} />
               </div>
               <div className="px-4 py-3">
                 <label className="block text-xs font-medium text-slate-500 mb-1">Last Updated</label>
-                <input
-                  type="date"
-                  value={lastUpdated}
-                  readOnly
-                  className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm text-slate-500 bg-slate-50 cursor-default"
-                />
+                <input type="date" value={lastUpdated} readOnly
+                  className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm text-slate-500 bg-slate-50 cursor-default" />
               </div>
             </div>
 
