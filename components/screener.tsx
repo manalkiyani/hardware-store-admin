@@ -46,7 +46,7 @@ interface ScreenerProps {
   initialSupplierId?: string;
 }
 
-type ColKey = "no" | "image" | "name" | "sizes" | "weight" | "colors" | "category" | "supplier" | "purchasePrice" | "salePrice" | "inStock" | "shelfLocation";
+type ColKey = "no" | "image" | "name" | "sizes" | "weight" | "colors" | "category" | "supplier" | "purchasePrice" | "salePrice" | "inStock" | "shelfLocation" | "lastUpdated";
 
 const ALL_COLS: { key: ColKey; label: string; defaultOn: boolean; align?: "right" }[] = [
   { key: "no",            label: "No.",            defaultOn: false },
@@ -61,6 +61,7 @@ const ALL_COLS: { key: ColKey; label: string; defaultOn: boolean; align?: "right
   { key: "salePrice",     label: "Sale Price",     defaultOn: true,  align: "right" },
   { key: "inStock",       label: "In Stock",       defaultOn: true,  align: "right" },
   { key: "shelfLocation", label: "Shelf Location", defaultOn: false },
+  { key: "lastUpdated",   label: "Last Updated",   defaultOn: false },
 ];
 
 function ColPicker({
@@ -334,6 +335,7 @@ export default function Screener({
                 {show("salePrice")     && <SortTh sk="salePrice" label="Sale Price" align="right" />}
                 {show("inStock")       && <SortTh sk="inStock" label="In Stock" align="right" />}
                 {show("shelfLocation") && <SortTh sk="shelfLocation" label="Shelf Location" />}
+                {show("lastUpdated")   && <th className="text-left text-xs font-medium text-slate-400 uppercase tracking-wide px-4 py-3">Last Updated</th>}
                 <th className="text-right text-xs font-medium text-slate-400 uppercase tracking-wide px-4 py-3">Actions</th>
               </tr>
             </thead>
@@ -497,6 +499,11 @@ export default function Screener({
                   {show("shelfLocation") && (
                     <td className="px-4 py-3 text-sm text-slate-500">
                       {product.shelf_location ?? <span className="text-slate-300">—</span>}
+                    </td>
+                  )}
+                  {show("lastUpdated") && (
+                    <td className="px-4 py-3 text-sm text-slate-500">
+                      {product.last_updated ?? <span className="text-slate-300">—</span>}
                     </td>
                   )}
                   <td className="px-4 py-3 text-right">
