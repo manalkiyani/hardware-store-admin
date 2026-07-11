@@ -5,7 +5,14 @@ import Link from "next/link";
 import Image from "next/image";
 import { Search, X, Columns3, ChevronUp, ChevronDown, ChevronsUpDown, ChevronRight } from "lucide-react";
 import { useRouter } from "next/navigation";
-import type { Product, Category, BrandSupplier, WeightVariant, SizeEntry } from "@/lib/types";
+import type { Product, Category, BrandSupplier, WeightVariant, SizeEntry, WeightUnit } from "@/lib/types";
+
+const WEIGHT_COLORS: Record<WeightUnit, string> = {
+  Dabbi:   "bg-orange-100 text-orange-700",
+  Quarter: "bg-blue-100 text-blue-700",
+  Gallon:  "bg-emerald-100 text-emerald-700",
+  Bucket:  "bg-violet-100 text-violet-700",
+};
 
 function lowestSalePrice(p: Product): number | null {
   if (p.variant_type === "weight" && p.weight_variants?.length) {
@@ -405,7 +412,7 @@ export default function Screener({
                       {product.weight_variants && product.weight_variants.length > 0 ? (
                         <div className="flex flex-wrap gap-1">
                           {product.weight_variants.map((v, idx) => (
-                            <span key={idx} className="inline-block px-2 py-0.5 bg-slate-100 text-slate-600 text-xs rounded-full">{v.weight}</span>
+                            <span key={idx} className={`inline-block px-2 py-0.5 text-xs rounded-full font-medium ${WEIGHT_COLORS[v.weight] ?? "bg-slate-100 text-slate-600"}`}>{v.weight}</span>
                           ))}
                         </div>
                       ) : (
@@ -511,7 +518,9 @@ export default function Screener({
                           {product.variant_type === "weight" && product.weight_variants?.map((v, idx) => (
                             <React.Fragment key={idx}>
                               <tr>
-                                <td className="pr-8 py-0.5 text-slate-700 font-medium">{v.weight}</td>
+                                <td className="pr-8 py-0.5">
+                                  <span className={`inline-block px-2 py-0.5 text-xs rounded-full font-medium ${WEIGHT_COLORS[v.weight] ?? "bg-slate-100 text-slate-600"}`}>{v.weight}</span>
+                                </td>
                                 <td className="pr-6 py-0.5 text-right text-slate-500 tabular-nums">
                                   {v.purchase_price != null ? `Rs ${v.purchase_price.toLocaleString()}` : <span className="text-slate-300">—</span>}
                                 </td>
