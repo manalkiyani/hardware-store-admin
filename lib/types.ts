@@ -60,6 +60,7 @@ export interface BrandSupplier {
   documentId: string;
   name: string;
   contact_number?: string;
+  color?: string;
   products?: Product[];
 }
 

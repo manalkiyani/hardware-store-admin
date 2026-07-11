@@ -6,6 +6,7 @@ import Image from "next/image";
 import { Search, X, Columns3, ChevronUp, ChevronDown, ChevronsUpDown, ChevronRight } from "lucide-react";
 import { useRouter } from "next/navigation";
 import type { Product, Category, BrandSupplier, WeightVariant, SizeEntry, WeightUnit } from "@/lib/types";
+import { getSupplierColor } from "@/lib/supplier-colors";
 
 const WEIGHT_COLORS: Record<WeightUnit, string> = {
   Dabbi:   "bg-orange-100 text-orange-700",
@@ -317,7 +318,7 @@ export default function Screener({
             No products match your filters.
           </div>
         ) : (
-          <table className="w-full">
+          <table className="w-full text-base">
             <thead>
               <tr className="border-b border-slate-100">
                 <th className="w-8 px-2 py-3" />
@@ -380,7 +381,7 @@ export default function Screener({
                   )}
 
                   {show("name") && (
-                    <td className="px-4 py-3">
+                    <td className="px-4 py-3 text-sm">
                       <Link
                         href={`/products/${product.documentId}/edit`}
                         className="text-sm font-medium text-slate-900 hover:text-blue-600 transition-colors"
@@ -449,11 +450,15 @@ export default function Screener({
 
                   {show("supplier") && (
                     <td className="px-4 py-3 text-sm text-slate-500">
-                      {product.brand_supplier ? (
-                        <span className="inline-block px-2 py-0.5 bg-slate-100 text-slate-600 text-xs rounded-full">
-                          {product.brand_supplier.name}
-                        </span>
-                      ) : <span className="text-slate-300">—</span>}
+                      {product.brand_supplier ? (() => {
+                        const c = getSupplierColor(product.brand_supplier.color);
+                        return (
+                          <span className="inline-block px-2 py-0.5 text-xs rounded-full font-semibold"
+                            style={{ backgroundColor: c.bg, color: c.text }}>
+                            {product.brand_supplier.name}
+                          </span>
+                        );
+                      })() : <span className="text-slate-300">—</span>}
                     </td>
                   )}
 

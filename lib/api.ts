@@ -134,6 +134,7 @@ export async function getBrandSuppliers(): Promise<BrandSupplier[]> {
 export async function createBrandSupplier(data: {
   name: string;
   contact_number?: string;
+  color?: string;
 }): Promise<BrandSupplier> {
   const res = await apiFetch<StrapiSingleResponse<BrandSupplier>>(
     "/brand-suppliers",
@@ -147,7 +148,7 @@ export async function createBrandSupplier(data: {
 
 export async function updateBrandSupplier(
   id: string,
-  data: { name: string; contact_number?: string }
+  data: { name: string; contact_number?: string; color?: string }
 ): Promise<BrandSupplier> {
   const res = await apiFetch<StrapiSingleResponse<BrandSupplier>>(
     `/brand-suppliers/${id}`,
