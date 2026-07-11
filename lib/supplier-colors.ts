@@ -1,16 +1,16 @@
 export const SUPPLIER_COLOR_OPTIONS = [
-  { key: "slate",   bg: "#e2e8f0", text: "#334155" },
-  { key: "red",     bg: "#fee2e2", text: "#b91c1c" },
-  { key: "orange",  bg: "#ffedd5", text: "#c2410c" },
-  { key: "amber",   bg: "#fef3c7", text: "#b45309" },
-  { key: "lime",    bg: "#ecfccb", text: "#4d7c0f" },
-  { key: "emerald", bg: "#d1fae5", text: "#065f46" },
-  { key: "teal",    bg: "#ccfbf1", text: "#0f766e" },
-  { key: "sky",     bg: "#e0f2fe", text: "#0369a1" },
-  { key: "blue",    bg: "#dbeafe", text: "#1d4ed8" },
-  { key: "violet",  bg: "#ede9fe", text: "#6d28d9" },
-  { key: "pink",    bg: "#fce7f3", text: "#be185d" },
-  { key: "rose",    bg: "#ffe4e6", text: "#be123c" },
+  { key: "slate",   bg: "#475569", text: "#f8fafc" },
+  { key: "red",     bg: "#b91c1c", text: "#fff1f2" },
+  { key: "orange",  bg: "#c2410c", text: "#fff7ed" },
+  { key: "amber",   bg: "#b45309", text: "#fffbeb" },
+  { key: "lime",    bg: "#4d7c0f", text: "#f7fee7" },
+  { key: "emerald", bg: "#065f46", text: "#ecfdf5" },
+  { key: "teal",    bg: "#0f766e", text: "#f0fdfa" },
+  { key: "sky",     bg: "#0369a1", text: "#f0f9ff" },
+  { key: "blue",    bg: "#1d4ed8", text: "#eff6ff" },
+  { key: "violet",  bg: "#6d28d9", text: "#f5f3ff" },
+  { key: "pink",    bg: "#be185d", text: "#fdf2f8" },
+  { key: "rose",    bg: "#be123c", text: "#fff1f2" },
 ] as const;
 
 export type SupplierColorKey = typeof SUPPLIER_COLOR_OPTIONS[number]["key"];
