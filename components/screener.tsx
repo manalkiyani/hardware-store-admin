@@ -17,7 +17,7 @@ interface ScreenerProps {
   initialSupplierId?: string;
 }
 
-type ColKey = "no" | "image" | "name" | "sizes" | "weight" | "colors" | "purchasePrice" | "salePrice" | "inStock" | "shelfLocation";
+type ColKey = "no" | "image" | "name" | "sizes" | "weight" | "colors" | "category" | "supplier" | "purchasePrice" | "salePrice" | "inStock" | "shelfLocation";
 
 const ALL_COLS: { key: ColKey; label: string; defaultOn: boolean; align?: "right" }[] = [
   { key: "no",            label: "No.",            defaultOn: false },
@@ -26,6 +26,8 @@ const ALL_COLS: { key: ColKey; label: string; defaultOn: boolean; align?: "right
   { key: "sizes",         label: "Sizes",          defaultOn: true  },
   { key: "weight",        label: "Weight",         defaultOn: true  },
   { key: "colors",        label: "Colors",         defaultOn: false },
+  { key: "category",      label: "Category",       defaultOn: false },
+  { key: "supplier",      label: "Supplier",       defaultOn: false },
   { key: "purchasePrice", label: "Purchase Price", defaultOn: true,  align: "right" },
   { key: "salePrice",     label: "Sale Price",     defaultOn: true,  align: "right" },
   { key: "inStock",       label: "In Stock",       defaultOn: true,  align: "right" },
@@ -226,6 +228,8 @@ export default function Screener({
                 {show("sizes")         && <th className="text-left text-xs font-medium text-slate-400 uppercase tracking-wide px-4 py-3">Sizes</th>}
                 {show("weight")        && <th className="text-left text-xs font-medium text-slate-400 uppercase tracking-wide px-4 py-3">Weight</th>}
                 {show("colors")        && <th className="text-left text-xs font-medium text-slate-400 uppercase tracking-wide px-4 py-3">Colors</th>}
+                {show("category")      && <th className="text-left text-xs font-medium text-slate-400 uppercase tracking-wide px-4 py-3">Category</th>}
+                {show("supplier")      && <th className="text-left text-xs font-medium text-slate-400 uppercase tracking-wide px-4 py-3">Supplier</th>}
                 {show("purchasePrice") && <th className="text-right text-xs font-medium text-slate-400 uppercase tracking-wide px-4 py-3">Purchase Price</th>}
                 {show("salePrice")     && <th className="text-right text-xs font-medium text-slate-400 uppercase tracking-wide px-4 py-3">Sale Price</th>}
                 {show("inStock")       && <th className="text-right text-xs font-medium text-slate-400 uppercase tracking-wide px-4 py-3">In Stock</th>}
@@ -314,6 +318,26 @@ export default function Screener({
                       ) : (
                         <span className="text-slate-300 text-sm">—</span>
                       )}
+                    </td>
+                  )}
+
+                  {show("category") && (
+                    <td className="px-4 py-3 text-sm text-slate-500">
+                      {product.category ? (
+                        <span className="inline-block px-2 py-0.5 bg-slate-100 text-slate-600 text-xs rounded-full">
+                          {product.category.name}
+                        </span>
+                      ) : <span className="text-slate-300">—</span>}
+                    </td>
+                  )}
+
+                  {show("supplier") && (
+                    <td className="px-4 py-3 text-sm text-slate-500">
+                      {product.brand_supplier ? (
+                        <span className="inline-block px-2 py-0.5 bg-slate-100 text-slate-600 text-xs rounded-full">
+                          {product.brand_supplier.name}
+                        </span>
+                      ) : <span className="text-slate-300">—</span>}
                     </td>
                   )}
 
