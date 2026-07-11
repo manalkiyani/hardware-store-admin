@@ -1,9 +1,9 @@
 "use client";
 
-import { useState, useMemo, useCallback, useRef, useEffect } from "react";
+import React, { useState, useMemo, useCallback, useRef, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { Search, X, Columns3, ChevronUp, ChevronDown, ChevronsUpDown } from "lucide-react";
+import { Search, X, Columns3, ChevronUp, ChevronDown, ChevronsUpDown, ChevronRight } from "lucide-react";
 import { useRouter } from "next/navigation";
 import type { Product, Category, BrandSupplier, WeightVariant, SizeEntry } from "@/lib/types";
 
@@ -140,6 +140,16 @@ export default function Screener({
       setSortKey(key);
       setSortDir("asc");
     }
+  }
+
+  const [expandedRows, setExpandedRows] = useState<Set<number>>(new Set());
+
+  function toggleExpand(id: number) {
+    setExpandedRows((prev) => {
+      const next = new Set(prev);
+      next.has(id) ? next.delete(id) : next.add(id);
+      return next;
+    });
   }
 
   const [visibleCols, setVisibleCols] = useState<Set<ColKey>>(() => {
@@ -303,6 +313,7 @@ export default function Screener({
           <table className="w-full">
             <thead>
               <tr className="border-b border-slate-100">
+                <th className="w-8 px-2 py-3" />
                 {show("no")            && <th className="text-left text-xs font-medium text-slate-400 uppercase tracking-wide px-4 py-3 w-10">No.</th>}
                 {show("image")         && <th className="text-left text-xs font-medium text-slate-400 uppercase tracking-wide px-4 py-3 w-14">Image</th>}
                 {show("name")          && <SortTh sk="name" label="Name" />}
@@ -319,11 +330,25 @@ export default function Screener({
               </tr>
             </thead>
             <tbody>
-              {filtered.map((product, i) => (
+              {filtered.map((product, i) => {
+                const hasVariants = (product.variant_type === "weight" && !!product.weight_variants?.length) ||
+                  (product.variant_type === "size" && !!product.sizes?.length);
+                const isExpanded = expandedRows.has(product.id);
+                const colSpan = 1 + ALL_COLS.filter((c) => show(c.key)).length + 1; // chevron + visible + actions
+
+                return (
+                <React.Fragment key={product.id}>
                 <tr
-                  key={product.id}
-                  className={i < filtered.length - 1 ? "border-b border-slate-100 hover:bg-slate-50" : "hover:bg-slate-50"}
+                  className={i < filtered.length - 1 || isExpanded ? "border-b border-slate-100 hover:bg-slate-50" : "hover:bg-slate-50"}
                 >
+                  <td className="px-2 py-3 w-8">
+                    {hasVariants && (
+                      <button type="button" onClick={() => toggleExpand(product.id)}
+                        className="p-0.5 text-slate-400 hover:text-blue-600 transition-colors rounded">
+                        <ChevronRight size={14} className={`transition-transform ${isExpanded ? "rotate-90" : ""}`} />
+                      </button>
+                    )}
+                  </td>
                   {show("no") && (
                     <td className="px-4 py-3 text-sm text-slate-400 tabular-nums">{i + 1}</td>
                   )}
@@ -456,7 +481,63 @@ export default function Screener({
                     <ProductActions productId={product.documentId} productName={product.name} />
                   </td>
                 </tr>
-              ))}
+
+                {/* Variant price breakdown sub-row */}
+                {hasVariants && isExpanded && (
+                  <tr className="border-b border-slate-100 bg-slate-50">
+                    <td colSpan={colSpan} className="px-6 py-3">
+                      <table className="text-xs">
+                        <thead>
+                          <tr className="text-slate-400">
+                            <th className="text-left font-medium pr-8 pb-1">
+                              {product.variant_type === "weight" ? "Weight" : "Size"}
+                            </th>
+                            <th className="text-right font-medium pr-6 pb-1">Purchase Price</th>
+                            <th className="text-right font-medium pb-1">Sale Price</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {product.variant_type === "weight" && product.weight_variants?.map((v, idx) => (
+                            <tr key={idx}>
+                              <td className="pr-8 py-0.5 text-slate-700 font-medium">{v.weight}</td>
+                              <td className="pr-6 py-0.5 text-right text-slate-500 tabular-nums">
+                                {v.purchase_price != null ? `Rs ${v.purchase_price.toLocaleString()}` : <span className="text-slate-300">—</span>}
+                              </td>
+                              <td className="py-0.5 text-right text-slate-700 font-medium tabular-nums">
+                                {v.sale_price != null ? `Rs ${v.sale_price.toLocaleString()}` : <span className="text-slate-300">—</span>}
+                              </td>
+                            </tr>
+                          ))}
+                          {product.variant_type === "size" && product.sizes?.map((s, idx) => (
+                            <tr key={idx}>
+                              <td className="pr-8 py-0.5 text-slate-700 font-medium">{s.value} {s.unit}</td>
+                              <td className="pr-6 py-0.5 text-right text-slate-500 tabular-nums">
+                                {s.purchase_price != null ? `Rs ${s.purchase_price.toLocaleString()}` : <span className="text-slate-300">—</span>}
+                              </td>
+                              <td className="py-0.5 text-right text-slate-700 font-medium tabular-nums">
+                                {s.sale_price != null ? `Rs ${s.sale_price.toLocaleString()}` : <span className="text-slate-300">—</span>}
+                              </td>
+                            </tr>
+                          ))}
+                          {(product.purchase_price != null || product.sale_price != null) && (
+                            <tr className="border-t border-slate-200 mt-1">
+                              <td className="pr-8 py-0.5 text-slate-400 italic">Default</td>
+                              <td className="pr-6 py-0.5 text-right text-slate-400 tabular-nums">
+                                {product.purchase_price != null ? `Rs ${product.purchase_price.toLocaleString()}` : "—"}
+                              </td>
+                              <td className="py-0.5 text-right text-slate-400 tabular-nums">
+                                {product.sale_price != null ? `Rs ${product.sale_price.toLocaleString()}` : "—"}
+                              </td>
+                            </tr>
+                          )}
+                        </tbody>
+                      </table>
+                    </td>
+                  </tr>
+                )}
+                </React.Fragment>
+                );
+              })}
             </tbody>
           </table>
         )}
