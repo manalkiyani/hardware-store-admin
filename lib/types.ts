@@ -21,6 +21,7 @@ export interface SizeEntry {
   purchase_price?: number | null;
   sale_price?: number | null;
   in_stock?: number | null;
+  variant_colors?: VariantColor[];
 }
 
 export interface WeightVariant {
@@ -29,11 +30,18 @@ export interface WeightVariant {
   purchase_price?: number | null;
   sale_price?: number | null;
   in_stock?: number | null;
+  variant_colors?: VariantColor[];
 }
 
 export interface ColorEntry {
   id?: number;
   value: string;
+}
+
+export interface VariantColor {
+  id?: number;
+  value: string;
+  in_stock?: number | null;
 }
 
 export interface Category {
@@ -103,11 +111,11 @@ export interface ProductFormData {
   variant_type: VariantType;
   purchase_price?: number | string | null;
   sale_price?: number | string | null;
-  weight_variants?: { weight: WeightUnit; purchase_price?: number | null; sale_price?: number | null }[];
+  weight_variants?: { weight: WeightUnit; purchase_price?: number | null; sale_price?: number | null; in_stock?: number | null; variant_colors?: { value: string; in_stock?: number | null }[] }[];
   in_stock?: number | string;
   shelf_location?: string;
   last_updated?: string;
-  sizes?: { value: number; unit: SizeUnit; purchase_price?: number | null; sale_price?: number | null }[];
+  sizes?: { value: number; unit: SizeUnit; purchase_price?: number | null; sale_price?: number | null; in_stock?: number | null; variant_colors?: { value: string; in_stock?: number | null }[] }[];
   colors?: { value: string }[];
   category?: number | null;
   brand_supplier?: number | null;

@@ -469,9 +469,15 @@ export default function Screener({
                   {show("inStock") && (
                     <td className="px-4 py-3 text-sm text-slate-500 text-right">
                       {product.variant_type === "weight" && product.weight_variants?.length
-                        ? product.weight_variants.reduce((s, v) => s + (v.in_stock ?? 0), 0)
+                        ? product.weight_variants.reduce((s, v) =>
+                            s + (v.variant_colors?.length
+                              ? v.variant_colors.reduce((cs, c) => cs + (c.in_stock ?? 0), 0)
+                              : (v.in_stock ?? 0)), 0)
                         : product.variant_type === "size" && product.sizes?.length
-                        ? product.sizes.reduce((s, v) => s + (v.in_stock ?? 0), 0)
+                        ? product.sizes.reduce((s, v) =>
+                            s + (v.variant_colors?.length
+                              ? v.variant_colors.reduce((cs, c) => cs + (c.in_stock ?? 0), 0)
+                              : (v.in_stock ?? 0)), 0)
                         : (product.in_stock ?? "—")}
                     </td>
                   )}
@@ -503,32 +509,56 @@ export default function Screener({
                         </thead>
                         <tbody>
                           {product.variant_type === "weight" && product.weight_variants?.map((v, idx) => (
-                            <tr key={idx}>
-                              <td className="pr-8 py-0.5 text-slate-700 font-medium">{v.weight}</td>
-                              <td className="pr-6 py-0.5 text-right text-slate-500 tabular-nums">
-                                {v.purchase_price != null ? `Rs ${v.purchase_price.toLocaleString()}` : <span className="text-slate-300">—</span>}
-                              </td>
-                              <td className="pr-6 py-0.5 text-right text-slate-700 font-medium tabular-nums">
-                                {v.sale_price != null ? `Rs ${v.sale_price.toLocaleString()}` : <span className="text-slate-300">—</span>}
-                              </td>
-                              <td className="py-0.5 text-right text-slate-500 tabular-nums">
-                                {v.in_stock != null ? v.in_stock : <span className="text-slate-300">—</span>}
-                              </td>
-                            </tr>
+                            <React.Fragment key={idx}>
+                              <tr>
+                                <td className="pr-8 py-0.5 text-slate-700 font-medium">{v.weight}</td>
+                                <td className="pr-6 py-0.5 text-right text-slate-500 tabular-nums">
+                                  {v.purchase_price != null ? `Rs ${v.purchase_price.toLocaleString()}` : <span className="text-slate-300">—</span>}
+                                </td>
+                                <td className="pr-6 py-0.5 text-right text-slate-700 font-medium tabular-nums">
+                                  {v.sale_price != null ? `Rs ${v.sale_price.toLocaleString()}` : <span className="text-slate-300">—</span>}
+                                </td>
+                                <td className="py-0.5 text-right text-slate-500 tabular-nums">
+                                  {v.variant_colors?.length
+                                    ? v.variant_colors.reduce((s, c) => s + (c.in_stock ?? 0), 0)
+                                    : v.in_stock != null ? v.in_stock : <span className="text-slate-300">—</span>}
+                                </td>
+                              </tr>
+                              {v.variant_colors?.map((c, ci) => (
+                                <tr key={ci} className="text-slate-400">
+                                  <td className="pl-4 pr-8 py-0.5">↳ {c.value}</td>
+                                  <td className="pr-6" />
+                                  <td className="pr-6" />
+                                  <td className="py-0.5 text-right tabular-nums">{c.in_stock ?? <span className="text-slate-300">—</span>}</td>
+                                </tr>
+                              ))}
+                            </React.Fragment>
                           ))}
                           {product.variant_type === "size" && product.sizes?.map((s, idx) => (
-                            <tr key={idx}>
-                              <td className="pr-8 py-0.5 text-slate-700 font-medium">{s.value} {s.unit}</td>
-                              <td className="pr-6 py-0.5 text-right text-slate-500 tabular-nums">
-                                {s.purchase_price != null ? `Rs ${s.purchase_price.toLocaleString()}` : <span className="text-slate-300">—</span>}
-                              </td>
-                              <td className="pr-6 py-0.5 text-right text-slate-700 font-medium tabular-nums">
-                                {s.sale_price != null ? `Rs ${s.sale_price.toLocaleString()}` : <span className="text-slate-300">—</span>}
-                              </td>
-                              <td className="py-0.5 text-right text-slate-500 tabular-nums">
-                                {s.in_stock != null ? s.in_stock : <span className="text-slate-300">—</span>}
-                              </td>
-                            </tr>
+                            <React.Fragment key={idx}>
+                              <tr>
+                                <td className="pr-8 py-0.5 text-slate-700 font-medium">{s.value} {s.unit}</td>
+                                <td className="pr-6 py-0.5 text-right text-slate-500 tabular-nums">
+                                  {s.purchase_price != null ? `Rs ${s.purchase_price.toLocaleString()}` : <span className="text-slate-300">—</span>}
+                                </td>
+                                <td className="pr-6 py-0.5 text-right text-slate-700 font-medium tabular-nums">
+                                  {s.sale_price != null ? `Rs ${s.sale_price.toLocaleString()}` : <span className="text-slate-300">—</span>}
+                                </td>
+                                <td className="py-0.5 text-right text-slate-500 tabular-nums">
+                                  {s.variant_colors?.length
+                                    ? s.variant_colors.reduce((sum, c) => sum + (c.in_stock ?? 0), 0)
+                                    : s.in_stock != null ? s.in_stock : <span className="text-slate-300">—</span>}
+                                </td>
+                              </tr>
+                              {s.variant_colors?.map((c, ci) => (
+                                <tr key={ci} className="text-slate-400">
+                                  <td className="pl-4 pr-8 py-0.5">↳ {c.value}</td>
+                                  <td className="pr-6" />
+                                  <td className="pr-6" />
+                                  <td className="py-0.5 text-right tabular-nums">{c.in_stock ?? <span className="text-slate-300">—</span>}</td>
+                                </tr>
+                              ))}
+                            </React.Fragment>
                           ))}
                         </tbody>
                       </table>

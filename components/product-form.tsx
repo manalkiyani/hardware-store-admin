@@ -10,7 +10,7 @@ import ChipInput from "./chip-input";
 import { Dropdown } from "./dropdown";
 import type {
   Product, Category, BrandSupplier,
-  SizeUnit, SizeEntry, WeightUnit, WeightVariant, VariantType,
+  SizeUnit, SizeEntry, WeightUnit, WeightVariant, VariantType, VariantColor,
 } from "@/lib/types";
 import { createProduct, updateProduct, uploadProductImage } from "@/lib/api";
 
@@ -71,6 +71,68 @@ function PricePair({
   );
 }
 
+// ── Variant color editor (per-variant colors with quantities) ─────────────────
+function VariantColorEditor({
+  colors,
+  onChange,
+}: {
+  colors: VariantColor[];
+  onChange: (c: VariantColor[]) => void;
+}) {
+  const [newColor, setNewColor] = useState("");
+
+  function add() {
+    const val = newColor.trim();
+    if (!val) return;
+    onChange([...colors, { value: val, in_stock: null }]);
+    setNewColor("");
+  }
+
+  function remove(idx: number) {
+    onChange(colors.filter((_, i) => i !== idx));
+  }
+
+  function updateQty(idx: number, val: string) {
+    onChange(colors.map((c, i) =>
+      i === idx ? { ...c, in_stock: val === "" ? null : parseInt(val, 10) } : c
+    ));
+  }
+
+  return (
+    <div className="mt-2 pl-3 border-l-2 border-slate-100 space-y-1.5">
+      {colors.map((c, i) => (
+        <div key={i} className="flex items-center gap-2">
+          <span className="text-xs text-slate-600 w-24 truncate">{c.value}</span>
+          <input
+            type="number" min="0"
+            value={c.in_stock ?? ""}
+            onChange={(e) => updateQty(i, e.target.value)}
+            placeholder="Qty"
+            className="w-20 px-2 py-1 border border-slate-200 rounded-md text-xs outline-none focus:border-slate-400 bg-white"
+          />
+          <button type="button" onClick={() => remove(i)} className="text-slate-300 hover:text-red-500 transition-colors">
+            <X size={12} />
+          </button>
+        </div>
+      ))}
+      <div className="flex items-center gap-2 pt-0.5">
+        <input
+          type="text"
+          value={newColor}
+          onChange={(e) => setNewColor(e.target.value)}
+          onKeyDown={(e) => e.key === "Enter" && (e.preventDefault(), add())}
+          placeholder="Color name…"
+          className="w-28 px-2 py-1 border border-slate-200 rounded-md text-xs outline-none focus:border-slate-400"
+        />
+        <button type="button" onClick={add} disabled={!newColor.trim()}
+          className="inline-flex items-center gap-0.5 px-2 py-1 border border-slate-200 rounded-md text-xs text-slate-500 hover:bg-slate-50 disabled:opacity-40 transition-colors">
+          <Plus size={11} /> Color
+        </button>
+      </div>
+    </div>
+  );
+}
+
 // ── Weight variant editor ─────────────────────────────────────────────────────
 function WeightVariantEditor({
   variants, onChange,
@@ -82,7 +144,7 @@ function WeightVariantEditor({
 
   function add() {
     if (!addWeight) return;
-    onChange([...variants, { weight: addWeight as WeightUnit, purchase_price: null, sale_price: null }]);
+    onChange([...variants, { weight: addWeight as WeightUnit, purchase_price: null, sale_price: null, in_stock: null, variant_colors: [] }]);
     setAddWeight("");
   }
 
@@ -96,42 +158,49 @@ function WeightVariantEditor({
     ));
   }
 
+  function updateColors(idx: number, colors: VariantColor[]) {
+    onChange(variants.map((v, i) => i === idx ? { ...v, variant_colors: colors } : v));
+  }
+
   const usedWeights = new Set(variants.map((v) => v.weight));
 
   return (
     <div className="space-y-3">
       {variants.map((v, i) => (
-        <div key={i} className="flex items-center gap-2 p-3 bg-slate-50 rounded-lg">
-          <span className="text-sm font-medium text-slate-700 w-20 flex-shrink-0">{v.weight}</span>
-          <div className="flex-1 grid grid-cols-3 gap-2">
-            <div className="relative">
-              <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400 text-xs">Rs</span>
-              <input type="number" min="0" step="0.01"
-                value={v.purchase_price ?? ""}
-                onChange={(e) => update(i, "purchase_price", e.target.value)}
-                placeholder="Buy"
-                className="w-full pl-8 pr-2 py-1.5 border border-slate-200 rounded-md text-sm outline-none focus:border-slate-400 bg-white"
+        <div key={i} className="p-3 bg-slate-50 rounded-lg">
+          <div className="flex items-center gap-2">
+            <span className="text-sm font-medium text-slate-700 w-20 flex-shrink-0">{v.weight}</span>
+            <div className="flex-1 grid grid-cols-3 gap-2">
+              <div className="relative">
+                <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400 text-xs">Rs</span>
+                <input type="number" min="0" step="0.01"
+                  value={v.purchase_price ?? ""}
+                  onChange={(e) => update(i, "purchase_price", e.target.value)}
+                  placeholder="Buy"
+                  className="w-full pl-8 pr-2 py-1.5 border border-slate-200 rounded-md text-sm outline-none focus:border-slate-400 bg-white"
+                />
+              </div>
+              <div className="relative">
+                <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400 text-xs">Rs</span>
+                <input type="number" min="0" step="0.01"
+                  value={v.sale_price ?? ""}
+                  onChange={(e) => update(i, "sale_price", e.target.value)}
+                  placeholder="Sell"
+                  className="w-full pl-8 pr-2 py-1.5 border border-slate-200 rounded-md text-sm outline-none focus:border-slate-400 bg-white"
+                />
+              </div>
+              <input type="number" min="0"
+                value={v.in_stock ?? ""}
+                onChange={(e) => update(i, "in_stock", e.target.value)}
+                placeholder={v.variant_colors?.length ? "Default qty" : "Qty"}
+                className="w-full px-2 py-1.5 border border-slate-200 rounded-md text-sm outline-none focus:border-slate-400 bg-white"
               />
             </div>
-            <div className="relative">
-              <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400 text-xs">Rs</span>
-              <input type="number" min="0" step="0.01"
-                value={v.sale_price ?? ""}
-                onChange={(e) => update(i, "sale_price", e.target.value)}
-                placeholder="Sell"
-                className="w-full pl-8 pr-2 py-1.5 border border-slate-200 rounded-md text-sm outline-none focus:border-slate-400 bg-white"
-              />
-            </div>
-            <input type="number" min="0"
-              value={v.in_stock ?? ""}
-              onChange={(e) => update(i, "in_stock", e.target.value)}
-              placeholder="Qty"
-              className="w-full px-2 py-1.5 border border-slate-200 rounded-md text-sm outline-none focus:border-slate-400 bg-white"
-            />
+            <button type="button" onClick={() => remove(i)} className="p-1 text-slate-300 hover:text-red-500 transition-colors flex-shrink-0">
+              <Trash2 size={14} />
+            </button>
           </div>
-          <button type="button" onClick={() => remove(i)} className="p-1 text-slate-300 hover:text-red-500 transition-colors flex-shrink-0">
-            <Trash2 size={14} />
-          </button>
+          <VariantColorEditor colors={v.variant_colors ?? []} onChange={(c) => updateColors(i, c)} />
         </div>
       ))}
 
@@ -164,7 +233,7 @@ function SizeVariantEditor({
   function add() {
     const num = parseFloat(addValue);
     if (isNaN(num) || num <= 0) return;
-    onChange([...sizes, { value: num, unit: addUnit, purchase_price: null, sale_price: null }]);
+    onChange([...sizes, { value: num, unit: addUnit, purchase_price: null, sale_price: null, in_stock: null, variant_colors: [] }]);
     setAddValue("");
   }
 
@@ -178,40 +247,47 @@ function SizeVariantEditor({
     ));
   }
 
+  function updateColors(idx: number, colors: VariantColor[]) {
+    onChange(sizes.map((s, i) => i === idx ? { ...s, variant_colors: colors } : s));
+  }
+
   return (
     <div className="space-y-3">
       {sizes.map((s, i) => (
-        <div key={i} className="flex items-center gap-2 p-3 bg-slate-50 rounded-lg">
-          <span className="text-sm font-medium text-slate-700 w-20 flex-shrink-0">{s.value} {s.unit}</span>
-          <div className="flex-1 grid grid-cols-3 gap-2">
-            <div className="relative">
-              <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400 text-xs">Rs</span>
-              <input type="number" min="0" step="0.01"
-                value={s.purchase_price ?? ""}
-                onChange={(e) => update(i, "purchase_price", e.target.value)}
-                placeholder="Buy"
-                className="w-full pl-8 pr-2 py-1.5 border border-slate-200 rounded-md text-sm outline-none focus:border-slate-400 bg-white"
+        <div key={i} className="p-3 bg-slate-50 rounded-lg">
+          <div className="flex items-center gap-2">
+            <span className="text-sm font-medium text-slate-700 w-20 flex-shrink-0">{s.value} {s.unit}</span>
+            <div className="flex-1 grid grid-cols-3 gap-2">
+              <div className="relative">
+                <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400 text-xs">Rs</span>
+                <input type="number" min="0" step="0.01"
+                  value={s.purchase_price ?? ""}
+                  onChange={(e) => update(i, "purchase_price", e.target.value)}
+                  placeholder="Buy"
+                  className="w-full pl-8 pr-2 py-1.5 border border-slate-200 rounded-md text-sm outline-none focus:border-slate-400 bg-white"
+                />
+              </div>
+              <div className="relative">
+                <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400 text-xs">Rs</span>
+                <input type="number" min="0" step="0.01"
+                  value={s.sale_price ?? ""}
+                  onChange={(e) => update(i, "sale_price", e.target.value)}
+                  placeholder="Sell"
+                  className="w-full pl-8 pr-2 py-1.5 border border-slate-200 rounded-md text-sm outline-none focus:border-slate-400 bg-white"
+                />
+              </div>
+              <input type="number" min="0"
+                value={s.in_stock ?? ""}
+                onChange={(e) => update(i, "in_stock", e.target.value)}
+                placeholder={s.variant_colors?.length ? "Default qty" : "Qty"}
+                className="w-full px-2 py-1.5 border border-slate-200 rounded-md text-sm outline-none focus:border-slate-400 bg-white"
               />
             </div>
-            <div className="relative">
-              <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400 text-xs">Rs</span>
-              <input type="number" min="0" step="0.01"
-                value={s.sale_price ?? ""}
-                onChange={(e) => update(i, "sale_price", e.target.value)}
-                placeholder="Sell"
-                className="w-full pl-8 pr-2 py-1.5 border border-slate-200 rounded-md text-sm outline-none focus:border-slate-400 bg-white"
-              />
-            </div>
-            <input type="number" min="0"
-              value={s.in_stock ?? ""}
-              onChange={(e) => update(i, "in_stock", e.target.value)}
-              placeholder="Qty"
-              className="w-full px-2 py-1.5 border border-slate-200 rounded-md text-sm outline-none focus:border-slate-400 bg-white"
-            />
+            <button type="button" onClick={() => remove(i)} className="p-1 text-slate-300 hover:text-red-500 transition-colors flex-shrink-0">
+              <Trash2 size={14} />
+            </button>
           </div>
-          <button type="button" onClick={() => remove(i)} className="p-1 text-slate-300 hover:text-red-500 transition-colors flex-shrink-0">
-            <Trash2 size={14} />
-          </button>
+          <VariantColorEditor colors={s.variant_colors ?? []} onChange={(c) => updateColors(i, c)} />
         </div>
       ))}
 
@@ -296,12 +372,18 @@ export default function ProductForm({ product, categories, suppliers }: ProductF
         purchase_price: variantType === "none" && purchasePrice ? parseFloat(purchasePrice) : null,
         sale_price: variantType === "none" && salePrice ? parseFloat(salePrice) : null,
         weight_variants: variantType === "weight"
-          ? weightVariants.map(({ weight, purchase_price, sale_price, in_stock }) => ({ weight, purchase_price, sale_price, in_stock }))
+          ? weightVariants.map(({ weight, purchase_price, sale_price, in_stock, variant_colors }) => ({
+              weight, purchase_price, sale_price, in_stock,
+              variant_colors: (variant_colors ?? []).map(({ value, in_stock: qty }) => ({ value, in_stock: qty })),
+            }))
           : [],
         sizes: variantType === "size"
-          ? sizes.map(({ value, unit, purchase_price, sale_price, in_stock }) => ({ value, unit, purchase_price, sale_price, in_stock }))
+          ? sizes.map(({ value, unit, purchase_price, sale_price, in_stock, variant_colors }) => ({
+              value, unit, purchase_price, sale_price, in_stock,
+              variant_colors: (variant_colors ?? []).map(({ value: v, in_stock: qty }) => ({ value: v, in_stock: qty })),
+            }))
           : variantType === "none"
-          ? sizes.map(({ value, unit }) => ({ value, unit, purchase_price: null, sale_price: null, in_stock: null }))
+          ? sizes.map(({ value, unit }) => ({ value, unit, purchase_price: null, sale_price: null, in_stock: null, variant_colors: [] }))
           : [],
         colors: colors.map((v) => ({ value: v })),
         in_stock: inStock ? parseInt(inStock, 10) : undefined,
