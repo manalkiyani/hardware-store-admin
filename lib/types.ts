@@ -11,6 +11,7 @@ export interface StrapiImage {
 }
 
 export type SizeUnit = "foot" | "inch" | "meter";
+export type WeightUnit = "Dabbi" | "Quarter" | "Bucket" | "Gallon";
 
 export interface SizeEntry {
   id?: number;
@@ -55,6 +56,7 @@ export interface Product {
   material?: string;
   purchase_price?: number;
   sale_price: number;
+  weight?: WeightUnit | null;
   in_stock?: number;
   shelf_location?: string;
   last_updated?: string;
@@ -87,6 +89,7 @@ export interface ProductFormData {
   material?: string;
   purchase_price?: number | string;
   sale_price: number | string;
+  weight?: WeightUnit | null;
   in_stock?: number | string;
   shelf_location?: string;
   last_updated?: string;

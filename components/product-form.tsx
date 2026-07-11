@@ -8,7 +8,7 @@ import { Upload, Save, AlertCircle, Plus, X, CheckCircle, ArrowLeft } from "luci
 import clsx from "clsx";
 import ChipInput from "./chip-input";
 import { Dropdown } from "./dropdown";
-import type { Product, Category, BrandSupplier, SizeUnit, SizeEntry } from "@/lib/types";
+import type { Product, Category, BrandSupplier, SizeUnit, SizeEntry, WeightUnit } from "@/lib/types";
 import { createProduct, updateProduct, uploadProductImage } from "@/lib/api";
 
 interface ProductFormProps {
@@ -18,6 +18,7 @@ interface ProductFormProps {
 }
 
 const SIZE_UNITS: SizeUnit[] = ["inch", "foot", "meter"];
+const WEIGHT_UNITS: WeightUnit[] = ["Dabbi", "Quarter", "Bucket", "Gallon"];
 
 type SaveState = "idle" | "saving" | "saved";
 
@@ -135,6 +136,7 @@ export default function ProductForm({
     product?.in_stock?.toString() ?? ""
   );
   const [shelfLocation, setShelfLocation] = useState(product?.shelf_location ?? "");
+  const [weight, setWeight] = useState<string>(product?.weight ?? "");
   const [sizes, setSizes] = useState<SizeEntry[]>(product?.sizes ?? []);
   const [colors, setColors] = useState<string[]>(
     product?.colors?.map((c) => c.value) ?? []
@@ -184,6 +186,7 @@ export default function ProductForm({
         material: material || undefined,
         purchase_price: purchasePrice ? parseFloat(purchasePrice) : undefined,
         sale_price: parseFloat(salePrice),
+        weight: (weight as WeightUnit) || null,
         in_stock: inStock ? parseInt(inStock, 10) : undefined,
         shelf_location: shelfLocation || undefined,
         last_updated: today,
@@ -351,6 +354,18 @@ export default function ProductForm({
                       className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm outline-none focus:border-slate-400 focus:ring-1 focus:ring-slate-200"
                     />
                   </div>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-1.5">
+                    Weight
+                  </label>
+                  <Dropdown
+                    value={weight}
+                    onChange={setWeight}
+                    placeholder="Select weight…"
+                    fullWidth
+                    options={WEIGHT_UNITS.map((w) => ({ value: w, label: w }))}
+                  />
                 </div>
               </div>
             </div>
