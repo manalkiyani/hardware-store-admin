@@ -472,9 +472,9 @@ export default function Screener({
                   {show("weight") && (
                     <td className="px-4 py-1.5 text-xl">
                       {product.weight_variants && product.weight_variants.length > 0 ? (
-                        <div className="flex flex-wrap gap-1">
+                        <div className="flex flex-col gap-0.5">
                           {product.weight_variants.map((v, idx) => (
-                            <span key={idx} className={`inline-block px-2 py-0.5 text-xs rounded-full font-medium ${WEIGHT_COLORS[v.weight] ?? "bg-slate-100 text-slate-600"}`}>{v.weight}</span>
+                            <span key={idx} className="text-slate-600">{v.weight}</span>
                           ))}
                         </div>
                       ) : (
