@@ -514,9 +514,9 @@ export default function Screener({
                       {product.brand_supplier ? (() => {
                         const c = getSupplierColor(product.brand_supplier.color);
                         return (
-                          <span className="inline-block px-2 py-0.5 text-xs rounded-full font-semibold"
-                            style={{ backgroundColor: c.bg, color: c.text }}>
-                            {toPascalCase(product.brand_supplier.name)}
+                          <span className="inline-flex items-center gap-1.5">
+                            <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ backgroundColor: c.bg }} />
+                            <span className="text-slate-700">{toPascalCase(product.brand_supplier.name)}</span>
                           </span>
                         );
                       })() : <span className="text-slate-300">—</span>}
