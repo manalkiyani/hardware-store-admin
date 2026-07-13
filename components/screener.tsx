@@ -512,10 +512,13 @@ export default function Screener({
                   {show("supplier") && (() => {
                     const c = product.brand_supplier ? getSupplierColor(product.brand_supplier.color) : null;
                     return (
-                      <td className="px-4 py-3 text-sm font-medium"
+                      <td className="px-4 py-3 text-sm font-medium overflow-hidden"
                         style={c ? { backgroundColor: c.bg, color: c.text } : undefined}>
-                        {product.brand_supplier
-                          ? toPascalCase(product.brand_supplier.name)
+                        {product.brand_supplier ? (() => {
+                          const name = toPascalCase(product.brand_supplier.name);
+                          const truncated = name.length > 60 ? name.slice(0, 60) + "…" : name;
+                          return <span title={name.length > 60 ? name : undefined}>{truncated}</span>;
+                        })()
                           : <span className="text-slate-300 font-normal">—</span>}
                       </td>
                     );
