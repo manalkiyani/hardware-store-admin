@@ -283,7 +283,7 @@ export default function Screener({
       <th
         onClick={() => handleSort(sk)}
         style={{ width: colWidths[sk] }}
-        className={`relative text-xs font-medium uppercase tracking-wide px-4 py-3 cursor-pointer select-none whitespace-nowrap text-${align} ${active ? "text-blue-600" : "text-slate-400 hover:text-slate-600"}`}
+        className={`relative text-xs font-medium uppercase tracking-wide px-4 py-1.5 cursor-pointer select-none whitespace-nowrap text-${align} ${active ? "text-blue-600" : "text-slate-400 hover:text-slate-600"}`}
       >
         <span className={`inline-flex items-center gap-1.5 ${align === "right" ? "flex-row-reverse" : ""}`}>
           {ColIcon && <ColIcon size={12} className="flex-shrink-0" />}
@@ -299,7 +299,7 @@ export default function Screener({
     return (
       <th
         style={{ width: colWidths[colKey] }}
-        className={`relative text-xs font-medium uppercase tracking-wide px-4 py-3 whitespace-nowrap text-slate-400 text-${align}`}
+        className={`relative text-xs font-medium uppercase tracking-wide px-4 py-1.5 whitespace-nowrap text-slate-400 text-${align}`}
       >
         <span className={`inline-flex items-center gap-1.5 ${align === "right" ? "flex-row-reverse" : ""}`}>
           {ColIcon && <ColIcon size={12} className="flex-shrink-0" />}
@@ -379,7 +379,7 @@ export default function Screener({
           <table className="w-full text-base" style={{ tableLayout: "fixed", borderCollapse: "collapse" }}>
             <thead>
               <tr className="border-b border-slate-100">
-                <th className="w-8 px-2 py-3 relative" style={{ width: colWidths["chevron"] ?? 32 }}>
+                <th className="w-8 px-2 py-1.5 relative" style={{ width: colWidths["chevron"] ?? 32 }}>
                   <ResizeHandle colKey="chevron" />
                 </th>
                 {show("no")            && <StaticTh colKey="no"           label="No."           icon={Hash}          />}
@@ -395,7 +395,7 @@ export default function Screener({
                 {show("inStock")       && <SortTh sk="inStock"       label="In Stock"       align="right" />}
                 {show("shelfLocation") && <StaticTh colKey="shelfLocation" label="Shelf Location" icon={MapPin}     />}
                 {show("lastUpdated")   && <StaticTh colKey="lastUpdated"   label="Last Updated"   icon={CalendarDays} />}
-                <th className="text-right text-xs font-medium text-slate-400 uppercase tracking-wide px-4 py-3" style={{ width: colWidths["actions"] ?? 80 }}>Actions</th>
+                <th className="text-right text-xs font-medium text-slate-400 uppercase tracking-wide px-4 py-1.5" style={{ width: colWidths["actions"] ?? 80 }}>Actions</th>
               </tr>
             </thead>
             <tbody>
@@ -410,7 +410,7 @@ export default function Screener({
                 <tr
                   className={i < filtered.length - 1 || isExpanded ? "border-b border-slate-100 hover:bg-slate-50" : "hover:bg-slate-50"}
                 >
-                  <td className="px-2 py-3 w-8">
+                  <td className="px-2 py-1.5 w-8">
                     {hasVariants && (
                       <button type="button" onClick={() => toggleExpand(product.id)}
                         className="p-0.5 text-red-500 hover:text-red-700 transition-colors rounded">
@@ -419,11 +419,11 @@ export default function Screener({
                     )}
                   </td>
                   {show("no") && (
-                    <td className="px-4 py-3 text-sm text-slate-400 tabular-nums">{i + 1}</td>
+                    <td className="px-4 py-1.5 text-sm text-slate-400 tabular-nums">{i + 1}</td>
                   )}
 
                   {show("image") && (
-                    <td className="px-4 py-3">
+                    <td className="px-4 py-1.5">
                       <div className="w-10 h-10 rounded-lg bg-slate-100 overflow-hidden flex-shrink-0 flex items-center justify-center">
                         {product.picture ? (
                           <Image
@@ -442,7 +442,7 @@ export default function Screener({
                   )}
 
                   {show("name") && (
-                    <td className="px-4 py-3 text-sm">
+                    <td className="px-4 py-1.5 text-sm">
                       <Link
                         href={`/products/${product.documentId}/edit`}
                         className="text-sm font-medium text-slate-900 hover:text-blue-600 transition-colors"
@@ -454,7 +454,7 @@ export default function Screener({
                   )}
 
                   {show("sizes") && (
-                    <td className="px-4 py-3 text-xl">
+                    <td className="px-4 py-1.5 text-xl">
                       {product.sizes && product.sizes.length > 0 ? (
                         <div className="flex flex-wrap gap-1">
                           {product.sizes.map((s, idx) => (
@@ -470,7 +470,7 @@ export default function Screener({
                   )}
 
                   {show("weight") && (
-                    <td className="px-4 py-3 text-xl">
+                    <td className="px-4 py-1.5 text-xl">
                       {product.weight_variants && product.weight_variants.length > 0 ? (
                         <div className="flex flex-wrap gap-1">
                           {product.weight_variants.map((v, idx) => (
@@ -484,7 +484,7 @@ export default function Screener({
                   )}
 
                   {show("colors") && (
-                    <td className="px-4 py-3">
+                    <td className="px-4 py-1.5">
                       {product.colors && product.colors.length > 0 ? (
                         <div className="flex flex-wrap gap-1">
                           {product.colors.map((c, idx) => (
@@ -500,7 +500,7 @@ export default function Screener({
                   )}
 
                   {show("category") && (
-                    <td className="px-4 py-3 text-sm text-slate-500">
+                    <td className="px-4 py-1.5 text-sm text-slate-500">
                       {product.category ? (
                         <span className="inline-block px-2 py-0.5 bg-slate-100 text-slate-600 text-xs rounded-full">
                           {toPascalCase(product.category.name)}
@@ -512,7 +512,7 @@ export default function Screener({
                   {show("supplier") && (() => {
                     const c = product.brand_supplier ? getSupplierColor(product.brand_supplier.color) : null;
                     return (
-                      <td className="px-4 py-3 text-sm font-medium overflow-hidden"
+                      <td className="px-4 py-1.5 text-sm font-medium overflow-hidden"
                         style={c ? { backgroundColor: c.bg, color: c.text } : undefined}>
                         {product.brand_supplier ? (() => {
                           const name = toPascalCase(product.brand_supplier.name);
@@ -525,7 +525,7 @@ export default function Screener({
                   })()}
 
                   {show("purchasePrice") && (
-                    <td className="px-4 py-3 text-sm text-slate-900 text-right font-medium">
+                    <td className="px-4 py-1.5 text-sm text-slate-900 text-right font-medium">
                       {product.purchase_price != null
                         ? `Rs ${product.purchase_price.toLocaleString()}`
                         : <span className="text-slate-300 font-normal">—</span>}
@@ -533,7 +533,7 @@ export default function Screener({
                   )}
 
                   {show("salePrice") && (
-                    <td className="px-4 py-3 text-sm text-slate-900 text-right font-medium">
+                    <td className="px-4 py-1.5 text-sm text-slate-900 text-right font-medium">
                       {priceDisplay(product) !== "—"
                         ? priceDisplay(product)
                         : <span className="text-slate-300 font-normal">—</span>}
@@ -541,7 +541,7 @@ export default function Screener({
                   )}
 
                   {show("inStock") && (
-                    <td className="px-4 py-3 text-sm text-slate-500 text-right">
+                    <td className="px-4 py-1.5 text-sm text-slate-500 text-right">
                       {product.variant_type === "weight" && product.weight_variants?.length
                         ? product.weight_variants.reduce((s, v) =>
                             s + (v.variant_colors?.length
@@ -557,18 +557,18 @@ export default function Screener({
                   )}
 
                   {show("shelfLocation") && (
-                    <td className="px-4 py-3 text-sm text-slate-500">
+                    <td className="px-4 py-1.5 text-sm text-slate-500">
                       {product.shelf_location ?? <span className="text-slate-300">—</span>}
                     </td>
                   )}
                   {show("lastUpdated") && (
-                    <td className="px-4 py-3 text-sm text-slate-500">
+                    <td className="px-4 py-1.5 text-sm text-slate-500">
                       {product.last_updated
                         ? new Date(product.last_updated).toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" }).replace(/ /g, "-")
                         : <span className="text-slate-300">—</span>}
                     </td>
                   )}
-                  <td className="px-4 py-3 text-right">
+                  <td className="px-4 py-1.5 text-right">
                     <ProductActions productId={product.documentId} productName={product.name} />
                   </td>
                 </tr>
@@ -576,7 +576,7 @@ export default function Screener({
                 {/* Variant price breakdown sub-row */}
                 {hasVariants && isExpanded && (
                   <tr className="border-b border-slate-100 bg-slate-50">
-                    <td colSpan={colSpan} className="px-6 py-3">
+                    <td colSpan={colSpan} className="px-6 py-1.5">
                       <table className="text-xs">
                         <thead>
                           <tr className="text-slate-400">
