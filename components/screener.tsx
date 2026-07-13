@@ -155,17 +155,21 @@ export default function Screener({
   const [expandedRows, setExpandedRows] = useState<Set<number>>(new Set());
 
   const [colWidths, setColWidths] = useState<Partial<Record<string, number>>>({});
-  const dragRef = useRef<{ key: string; startX: number; startWidth: number } | null>(null);
+  const dragRef = useRef<{ key: string; startX: number; startWidth: number; minWidth: number } | null>(null);
 
   function startResize(key: string, e: React.MouseEvent) {
     e.preventDefault();
     e.stopPropagation();
     const th = (e.currentTarget as HTMLElement).parentElement as HTMLTableCellElement;
-    dragRef.current = { key, startX: e.clientX, startWidth: th.offsetWidth };
+    // measure header text natural width as minimum (span for SortTh, th itself for static headers)
+    const inner = th.querySelector("span") ?? th;
+    const minWidth = (inner as HTMLElement).scrollWidth + 32; // 32px for padding
+
+    dragRef.current = { key, startX: e.clientX, startWidth: th.offsetWidth, minWidth };
 
     function onMove(ev: MouseEvent) {
       if (!dragRef.current) return;
-      const newWidth = Math.max(40, dragRef.current.startWidth + ev.clientX - dragRef.current.startX);
+      const newWidth = Math.max(dragRef.current.minWidth, dragRef.current.startWidth + ev.clientX - dragRef.current.startX);
       setColWidths((prev) => ({ ...prev, [dragRef.current!.key]: newWidth }));
     }
     function onUp() {
