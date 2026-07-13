@@ -154,6 +154,40 @@ export default function Screener({
 
   const [expandedRows, setExpandedRows] = useState<Set<number>>(new Set());
 
+  const [colWidths, setColWidths] = useState<Partial<Record<string, number>>>({});
+  const dragRef = useRef<{ key: string; startX: number; startWidth: number } | null>(null);
+
+  function startResize(key: string, e: React.MouseEvent) {
+    e.preventDefault();
+    e.stopPropagation();
+    const th = (e.currentTarget as HTMLElement).parentElement as HTMLTableCellElement;
+    dragRef.current = { key, startX: e.clientX, startWidth: th.offsetWidth };
+
+    function onMove(ev: MouseEvent) {
+      if (!dragRef.current) return;
+      const newWidth = Math.max(40, dragRef.current.startWidth + ev.clientX - dragRef.current.startX);
+      setColWidths((prev) => ({ ...prev, [dragRef.current!.key]: newWidth }));
+    }
+    function onUp() {
+      dragRef.current = null;
+      document.removeEventListener("mousemove", onMove);
+      document.removeEventListener("mouseup", onUp);
+    }
+    document.addEventListener("mousemove", onMove);
+    document.addEventListener("mouseup", onUp);
+  }
+
+  function ResizeHandle({ colKey }: { colKey: string }) {
+    return (
+      <div
+        onMouseDown={(e) => startResize(colKey, e)}
+        className="absolute right-0 top-0 h-full w-1.5 cursor-col-resize group"
+      >
+        <div className="mx-auto w-px h-full bg-slate-200 group-hover:bg-blue-400 transition-colors" />
+      </div>
+    );
+  }
+
   function toggleExpand(id: number) {
     setExpandedRows((prev) => {
       const next = new Set(prev);
@@ -244,12 +278,14 @@ export default function Screener({
     return (
       <th
         onClick={() => handleSort(sk)}
-        className={`text-xs font-medium uppercase tracking-wide px-4 py-3 cursor-pointer select-none whitespace-nowrap text-${align} ${active ? "text-blue-600" : "text-slate-400 hover:text-slate-600"}`}
+        style={{ width: colWidths[sk] }}
+        className={`relative text-xs font-medium uppercase tracking-wide px-4 py-3 cursor-pointer select-none whitespace-nowrap text-${align} ${active ? "text-blue-600" : "text-slate-400 hover:text-slate-600"}`}
       >
         <span className={`inline-flex items-center gap-1 ${align === "right" ? "flex-row-reverse" : ""}`}>
           {label}
           <Icon size={12} className={active ? "text-blue-500" : "text-slate-300"} />
         </span>
+        <ResizeHandle colKey={sk} />
       </th>
     );
   }
@@ -320,24 +356,26 @@ export default function Screener({
             No products match your filters.
           </div>
         ) : (
-          <table className="w-full text-base">
+          <table className="w-full text-base" style={{ tableLayout: "fixed", borderCollapse: "collapse" }}>
             <thead>
               <tr className="border-b border-slate-100">
-                <th className="w-8 px-2 py-3" />
-                {show("no")            && <th className="text-left text-xs font-medium text-slate-400 uppercase tracking-wide px-4 py-3 w-10">No.</th>}
-                {show("image")         && <th className="text-left text-xs font-medium text-slate-400 uppercase tracking-wide px-4 py-3 w-14">Image</th>}
+                <th className="w-8 px-2 py-3 relative" style={{ width: colWidths["chevron"] ?? 32 }}>
+                  <ResizeHandle colKey="chevron" />
+                </th>
+                {show("no")            && <th className="relative text-left text-xs font-medium text-slate-400 uppercase tracking-wide px-4 py-3" style={{ width: colWidths["no"] ?? 48 }}>No.<ResizeHandle colKey="no" /></th>}
+                {show("image")         && <th className="relative text-left text-xs font-medium text-slate-400 uppercase tracking-wide px-4 py-3" style={{ width: colWidths["image"] ?? 64 }}>Image<ResizeHandle colKey="image" /></th>}
                 {show("name")          && <SortTh sk="name" label="Name" />}
-                {show("sizes")         && <th className="text-left text-xs font-medium text-slate-400 uppercase tracking-wide px-4 py-3">Sizes</th>}
+                {show("sizes")         && <th className="relative text-left text-xs font-medium text-slate-400 uppercase tracking-wide px-4 py-3" style={{ width: colWidths["sizes"] }}>Sizes<ResizeHandle colKey="sizes" /></th>}
                 {show("weight")        && <SortTh sk="weight" label="Weight" />}
-                {show("colors")        && <th className="text-left text-xs font-medium text-slate-400 uppercase tracking-wide px-4 py-3">Colors</th>}
+                {show("colors")        && <th className="relative text-left text-xs font-medium text-slate-400 uppercase tracking-wide px-4 py-3" style={{ width: colWidths["colors"] }}>Colors<ResizeHandle colKey="colors" /></th>}
                 {show("category")      && <SortTh sk="category" label="Category" />}
                 {show("supplier")      && <SortTh sk="supplier" label="Supplier" />}
                 {show("purchasePrice") && <SortTh sk="purchasePrice" label="Purchase Price" align="right" />}
                 {show("salePrice")     && <SortTh sk="salePrice" label="Sale Price" align="right" />}
                 {show("inStock")       && <SortTh sk="inStock" label="In Stock" align="right" />}
-                {show("shelfLocation") && <SortTh sk="shelfLocation" label="Shelf Location" />}
-                {show("lastUpdated")   && <th className="text-left text-xs font-medium text-slate-400 uppercase tracking-wide px-4 py-3">Last Updated</th>}
-                <th className="text-right text-xs font-medium text-slate-400 uppercase tracking-wide px-4 py-3">Actions</th>
+                {show("shelfLocation") && <th className="relative text-left text-xs font-medium text-slate-400 uppercase tracking-wide px-4 py-3" style={{ width: colWidths["shelfLocation"] }}>Shelf Location<ResizeHandle colKey="shelfLocation" /></th>}
+                {show("lastUpdated")   && <th className="relative text-left text-xs font-medium text-slate-400 uppercase tracking-wide px-4 py-3" style={{ width: colWidths["lastUpdated"] }}>Last Updated<ResizeHandle colKey="lastUpdated" /></th>}
+                <th className="text-right text-xs font-medium text-slate-400 uppercase tracking-wide px-4 py-3" style={{ width: colWidths["actions"] ?? 80 }}>Actions</th>
               </tr>
             </thead>
             <tbody>
