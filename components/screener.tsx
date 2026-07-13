@@ -390,9 +390,9 @@ export default function Screener({
                 {show("colors")        && <StaticTh colKey="colors"        label="Colors"        icon={Palette}       />}
                 {show("category")      && <SortTh sk="category"      label="Category"       icon={FolderTree}    />}
                 {show("supplier")      && <SortTh sk="supplier"      label="Supplier"       icon={Truck}         />}
-                {show("purchasePrice") && <SortTh sk="purchasePrice" label="Purchase Price" icon={ShoppingCart}  align="right" />}
-                {show("salePrice")     && <SortTh sk="salePrice"     label="Sale Price"     icon={BadgeDollarSign} align="right" />}
-                {show("inStock")       && <SortTh sk="inStock"       label="In Stock"       icon={Package}       align="right" />}
+                {show("purchasePrice") && <SortTh sk="purchasePrice" label="Purchase Price" align="right" />}
+                {show("salePrice")     && <SortTh sk="salePrice"     label="Sale Price"     align="right" />}
+                {show("inStock")       && <SortTh sk="inStock"       label="In Stock"       align="right" />}
                 {show("shelfLocation") && <StaticTh colKey="shelfLocation" label="Shelf Location" icon={MapPin}     />}
                 {show("lastUpdated")   && <StaticTh colKey="lastUpdated"   label="Last Updated"   icon={CalendarDays} />}
                 <th className="text-right text-xs font-medium text-slate-400 uppercase tracking-wide px-4 py-3" style={{ width: colWidths["actions"] ?? 80 }}>Actions</th>
