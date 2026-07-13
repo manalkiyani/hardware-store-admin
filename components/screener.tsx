@@ -509,19 +509,17 @@ export default function Screener({
                     </td>
                   )}
 
-                  {show("supplier") && (
-                    <td className="px-4 py-3 text-sm text-slate-500">
-                      {product.brand_supplier ? (() => {
-                        const c = getSupplierColor(product.brand_supplier.color);
-                        return (
-                          <span className="inline-flex items-center gap-1.5">
-                            <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ backgroundColor: c.bg }} />
-                            <span className="text-slate-700">{toPascalCase(product.brand_supplier.name)}</span>
-                          </span>
-                        );
-                      })() : <span className="text-slate-300">—</span>}
-                    </td>
-                  )}
+                  {show("supplier") && (() => {
+                    const c = product.brand_supplier ? getSupplierColor(product.brand_supplier.color) : null;
+                    return (
+                      <td className="px-4 py-3 text-sm font-medium"
+                        style={c ? { backgroundColor: c.bg, color: c.text } : undefined}>
+                        {product.brand_supplier
+                          ? toPascalCase(product.brand_supplier.name)
+                          : <span className="text-slate-300 font-normal">—</span>}
+                      </td>
+                    );
+                  })()}
 
                   {show("purchasePrice") && (
                     <td className="px-4 py-3 text-sm text-slate-900 text-right font-medium">
