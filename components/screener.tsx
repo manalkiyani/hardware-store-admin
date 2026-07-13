@@ -454,7 +454,7 @@ export default function Screener({
                   )}
 
                   {show("sizes") && (
-                    <td className="px-4 py-3">
+                    <td className="px-4 py-3 text-xl">
                       {product.sizes && product.sizes.length > 0 ? (
                         <div className="flex flex-wrap gap-1">
                           {product.sizes.map((s, idx) => (
@@ -470,7 +470,7 @@ export default function Screener({
                   )}
 
                   {show("weight") && (
-                    <td className="px-4 py-3">
+                    <td className="px-4 py-3 text-xl">
                       {product.weight_variants && product.weight_variants.length > 0 ? (
                         <div className="flex flex-wrap gap-1">
                           {product.weight_variants.map((v, idx) => (
