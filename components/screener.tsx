@@ -516,8 +516,8 @@ export default function Screener({
                         style={c ? { backgroundColor: c.bg, color: c.text } : undefined}>
                         {product.brand_supplier ? (() => {
                           const name = toPascalCase(product.brand_supplier.name);
-                          const truncated = name.length > 60 ? name.slice(0, 60) + "…" : name;
-                          return <span title={name.length > 60 ? name : undefined}>{truncated}</span>;
+                          const truncated = name.length > 40 ? name.slice(0, 40) + "…" : name;
+                          return <span title={name.length > 40 ? name : undefined}>{truncated}</span>;
                         })()
                           : <span className="text-slate-300 font-normal">—</span>}
                       </td>
