@@ -3,7 +3,7 @@
 import React, { useState, useMemo, useCallback, useRef, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { Search, X, Columns3, ChevronUp, ChevronDown, ChevronsUpDown, ChevronRight } from "lucide-react";
+import { Search, X, Columns3, ChevronUp, ChevronDown, ChevronsUpDown, ChevronRight, Hash, ImageIcon, Tag, Ruler, Weight, Palette, FolderTree, Truck, ShoppingCart, BadgeDollarSign, Package, MapPin, CalendarDays } from "lucide-react";
 import { useRouter } from "next/navigation";
 import type { Product, Category, BrandSupplier, WeightVariant, SizeEntry, WeightUnit } from "@/lib/types";
 import { getSupplierColor } from "@/lib/supplier-colors";
@@ -276,20 +276,36 @@ export default function Screener({
   const hasFilters = search || categoryId || supplierId;
   const show = (key: ColKey) => visibleCols.has(key);
 
-  function SortTh({ sk, label, align = "left" }: { sk: SortKey; label: string; align?: "left" | "right" }) {
+  function SortTh({ sk, label, align = "left", icon: ColIcon }: { sk: SortKey; label: string; align?: "left" | "right"; icon?: React.ElementType }) {
     const active = sortKey === sk;
-    const Icon = active ? (sortDir === "asc" ? ChevronUp : ChevronDown) : ChevronsUpDown;
+    const SortIcon = active ? (sortDir === "asc" ? ChevronUp : ChevronDown) : ChevronsUpDown;
     return (
       <th
         onClick={() => handleSort(sk)}
         style={{ width: colWidths[sk] }}
         className={`relative text-xs font-medium uppercase tracking-wide px-4 py-3 cursor-pointer select-none whitespace-nowrap text-${align} ${active ? "text-blue-600" : "text-slate-400 hover:text-slate-600"}`}
       >
-        <span className={`inline-flex items-center gap-1 ${align === "right" ? "flex-row-reverse" : ""}`}>
+        <span className={`inline-flex items-center gap-1.5 ${align === "right" ? "flex-row-reverse" : ""}`}>
+          {ColIcon && <ColIcon size={12} className="flex-shrink-0" />}
           {label}
-          <Icon size={12} className={active ? "text-blue-500" : "text-slate-300"} />
+          <SortIcon size={12} className={active ? "text-blue-500" : "text-slate-300"} />
         </span>
         <ResizeHandle colKey={sk} />
+      </th>
+    );
+  }
+
+  function StaticTh({ colKey, label, icon: ColIcon, align = "left" }: { colKey: string; label: string; icon?: React.ElementType; align?: "left" | "right" }) {
+    return (
+      <th
+        style={{ width: colWidths[colKey] }}
+        className={`relative text-xs font-medium uppercase tracking-wide px-4 py-3 whitespace-nowrap text-slate-400 text-${align}`}
+      >
+        <span className={`inline-flex items-center gap-1.5 ${align === "right" ? "flex-row-reverse" : ""}`}>
+          {ColIcon && <ColIcon size={12} className="flex-shrink-0" />}
+          {label}
+        </span>
+        <ResizeHandle colKey={colKey} />
       </th>
     );
   }
@@ -366,19 +382,19 @@ export default function Screener({
                 <th className="w-8 px-2 py-3 relative" style={{ width: colWidths["chevron"] ?? 32 }}>
                   <ResizeHandle colKey="chevron" />
                 </th>
-                {show("no")            && <th className="relative text-left text-xs font-medium text-slate-400 uppercase tracking-wide px-4 py-3" style={{ width: colWidths["no"] ?? 48 }}>No.<ResizeHandle colKey="no" /></th>}
-                {show("image")         && <th className="relative text-left text-xs font-medium text-slate-400 uppercase tracking-wide px-4 py-3" style={{ width: colWidths["image"] ?? 64 }}>Image<ResizeHandle colKey="image" /></th>}
-                {show("name")          && <SortTh sk="name" label="Name" />}
-                {show("sizes")         && <th className="relative text-left text-xs font-medium text-slate-400 uppercase tracking-wide px-4 py-3" style={{ width: colWidths["sizes"] }}>Sizes<ResizeHandle colKey="sizes" /></th>}
-                {show("weight")        && <SortTh sk="weight" label="Weight" />}
-                {show("colors")        && <th className="relative text-left text-xs font-medium text-slate-400 uppercase tracking-wide px-4 py-3" style={{ width: colWidths["colors"] }}>Colors<ResizeHandle colKey="colors" /></th>}
-                {show("category")      && <SortTh sk="category" label="Category" />}
-                {show("supplier")      && <SortTh sk="supplier" label="Supplier" />}
-                {show("purchasePrice") && <SortTh sk="purchasePrice" label="Purchase Price" align="right" />}
-                {show("salePrice")     && <SortTh sk="salePrice" label="Sale Price" align="right" />}
-                {show("inStock")       && <SortTh sk="inStock" label="In Stock" align="right" />}
-                {show("shelfLocation") && <th className="relative text-left text-xs font-medium text-slate-400 uppercase tracking-wide px-4 py-3" style={{ width: colWidths["shelfLocation"] }}>Shelf Location<ResizeHandle colKey="shelfLocation" /></th>}
-                {show("lastUpdated")   && <th className="relative text-left text-xs font-medium text-slate-400 uppercase tracking-wide px-4 py-3" style={{ width: colWidths["lastUpdated"] }}>Last Updated<ResizeHandle colKey="lastUpdated" /></th>}
+                {show("no")            && <StaticTh colKey="no"           label="No."           icon={Hash}          />}
+                {show("image")         && <StaticTh colKey="image"         label="Image"         icon={ImageIcon}     />}
+                {show("name")          && <SortTh sk="name"          label="Name"           icon={Tag}           />}
+                {show("sizes")         && <StaticTh colKey="sizes"         label="Sizes"         icon={Ruler}         />}
+                {show("weight")        && <SortTh sk="weight"        label="Weight"         icon={Weight}        />}
+                {show("colors")        && <StaticTh colKey="colors"        label="Colors"        icon={Palette}       />}
+                {show("category")      && <SortTh sk="category"      label="Category"       icon={FolderTree}    />}
+                {show("supplier")      && <SortTh sk="supplier"      label="Supplier"       icon={Truck}         />}
+                {show("purchasePrice") && <SortTh sk="purchasePrice" label="Purchase Price" icon={ShoppingCart}  align="right" />}
+                {show("salePrice")     && <SortTh sk="salePrice"     label="Sale Price"     icon={BadgeDollarSign} align="right" />}
+                {show("inStock")       && <SortTh sk="inStock"       label="In Stock"       icon={Package}       align="right" />}
+                {show("shelfLocation") && <StaticTh colKey="shelfLocation" label="Shelf Location" icon={MapPin}     />}
+                {show("lastUpdated")   && <StaticTh colKey="lastUpdated"   label="Last Updated"   icon={CalendarDays} />}
                 <th className="text-right text-xs font-medium text-slate-400 uppercase tracking-wide px-4 py-3" style={{ width: colWidths["actions"] ?? 80 }}>Actions</th>
               </tr>
             </thead>
