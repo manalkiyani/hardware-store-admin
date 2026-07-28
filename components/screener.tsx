@@ -5,16 +5,33 @@ import Link from "next/link";
 import Image from "next/image";
 import { Search, X, Columns3, ChevronUp, ChevronDown, ChevronsUpDown, ChevronRight, Hash, ImageIcon, Tag, Ruler, Weight, Palette, FolderTree, Truck, ShoppingCart, BadgeDollarSign, Package, MapPin, CalendarDays } from "lucide-react";
 import { useRouter } from "next/navigation";
-import type { Product, Category, BrandSupplier, WeightVariant, SizeEntry, WeightUnit } from "@/lib/types";
+import type { Product, Category, BrandSupplier, WeightVariant, SizeEntry } from "@/lib/types";
 import { getSupplierColor } from "@/lib/supplier-colors";
 import { toPascalCase } from "@/lib/utils";
 
-const WEIGHT_BORDER_COLORS: Record<WeightUnit, string> = {
-  Dabbi:   "#f97316",
-  Quarter: "#3b82f6",
-  Gallon:  "#10b981",
-  Bucket:  "#8b5cf6",
+const CHIP_HUES = [262, 210, 180, 150, 120, 80, 45, 20, 300, 330];
+const UNIT_HUE: Record<string, number> = {
+  inch: 262, foot: 180, feet: 180, meter: 150, metre: 150, m: 150,
+  mm: 210, cm: 120, kg: 45, gram: 80, g: 80, litre: 300, liter: 300, ml: 330,
 };
+
+function hueFor(label: string): number {
+  const parts = String(label).trim().split(/\s+/);
+  const unit = parts[parts.length - 1].toLowerCase();
+  if (UNIT_HUE[unit] !== undefined) return UNIT_HUE[unit];
+  let h = 0;
+  for (let i = 0; i < unit.length; i++) h = (h * 31 + unit.charCodeAt(i)) % 9973;
+  return CHIP_HUES[h % CHIP_HUES.length];
+}
+
+function chipStyle(label: string): React.CSSProperties {
+  const h = hueFor(label);
+  return {
+    background: `oklch(0.955 0.03 ${h})`,
+    color: `oklch(0.45 0.13 ${h})`,
+    boxShadow: `inset 0 0 0 1px oklch(0.89 0.05 ${h})`,
+  };
+}
 
 function lowestSalePrice(p: Product): number | null {
   if (p.variant_type === "weight" && p.weight_variants?.length) {
@@ -58,8 +75,8 @@ const ALL_COLS: { key: ColKey; label: string; defaultOn: boolean; align?: "right
   { key: "colors",        label: "Colors",         defaultOn: false },
   { key: "category",      label: "Category",       defaultOn: false },
   { key: "supplier",      label: "Supplier",       defaultOn: false },
-  { key: "purchasePrice", label: "Purchase Price", defaultOn: true,  align: "right" },
-  { key: "salePrice",     label: "Sale Price",     defaultOn: true,  align: "right" },
+  { key: "purchasePrice", label: "Purchase", defaultOn: true,  align: "right" },
+  { key: "salePrice",     label: "Sale",     defaultOn: true,  align: "right" },
   { key: "inStock",       label: "In Stock",       defaultOn: true,  align: "right" },
   { key: "shelfLocation", label: "Shelf Location", defaultOn: false },
   { key: "lastUpdated",   label: "Last Updated",   defaultOn: false },
@@ -89,7 +106,7 @@ function ColPicker({
         type="button"
         onClick={() => setOpen((p) => !p)}
         className={`inline-flex items-center gap-2 px-3 py-2 border rounded-lg text-sm bg-white transition-colors ${
-          open ? "border-blue-500 ring-1 ring-blue-100 text-slate-800" : "border-slate-200 hover:border-slate-300 text-slate-500"
+          open ? "border-teal-600 ring-1 ring-teal-100 text-slate-800" : "border-slate-200 hover:border-slate-300 text-slate-500"
         }`}
       >
         <Columns3 size={14} />
@@ -113,7 +130,7 @@ function ColPicker({
                   checked={checked}
                   disabled={isName}
                   onChange={(e) => onChange(col.key, e.target.checked)}
-                  className="w-3.5 h-3.5 rounded accent-blue-600"
+                  className="w-3.5 h-3.5 rounded accent-teal-600"
                 />
                 {col.label}
                 {isName && <span className="ml-auto text-xs text-slate-300">always</span>}
@@ -189,7 +206,7 @@ export default function Screener({
       onMouseDown={(e) => startResize(colKey, e)}
       className="absolute right-0 top-0 h-full w-1.5 cursor-col-resize group"
     >
-      <div className="mx-auto w-px h-full bg-slate-200 group-hover:bg-blue-400 transition-colors" />
+      <div className="mx-auto w-px h-full bg-slate-200 group-hover:bg-teal-500 transition-colors" />
     </div>
   ), [startResize]);
 
@@ -288,12 +305,12 @@ export default function Screener({
       <th
         onClick={() => handleSort(sk)}
         style={{ width: colWidths[sk] }}
-        className={`relative text-xs font-medium uppercase tracking-wide px-4 py-1.5 cursor-pointer select-none whitespace-nowrap text-${align} ${active ? "text-blue-600" : "text-slate-400 hover:text-slate-600"}`}
+        className={`relative text-xs font-medium uppercase tracking-wide px-4 py-1.5 cursor-pointer select-none whitespace-nowrap text-${align} ${active ? "text-teal-700" : "text-slate-400 hover:text-slate-600"}`}
       >
         <span className={`inline-flex items-center gap-1.5 ${align === "right" ? "flex-row-reverse" : ""}`}>
           {ColIcon && <ColIcon size={12} className="flex-shrink-0" />}
           {label}
-          <SortIcon size={12} className={active ? "text-blue-500" : "text-slate-300"} />
+          <SortIcon size={12} className={active ? "text-teal-600" : "text-slate-300"} />
         </span>
         <ResizeHandle colKey={sk} />
       </th>
@@ -327,7 +344,7 @@ export default function Screener({
             value={search}
             onChange={(e) => handleSearch(e.target.value)}
             placeholder="Search by name or slug…"
-            className="w-full pl-8 pr-3 py-2 border border-slate-200 rounded-lg text-sm bg-white outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-100"
+            className="w-full pl-8 pr-3 py-2 border border-slate-200 rounded-lg text-sm bg-white outline-none focus:border-teal-600 focus:ring-1 focus:ring-teal-100"
           />
           {search && (
             <button onClick={() => handleSearch("")} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600">
@@ -357,6 +374,28 @@ export default function Screener({
           placeholder="All Suppliers"
           options={suppliers.map((s) => ({ value: String(s.id), label: s.name }))}
         />
+
+        {/* Expand / Collapse all */}
+        {(() => {
+          const rowsWithVariants = filtered.filter((p) =>
+            (p.variant_type === "weight" && !!p.weight_variants?.length) ||
+            (p.variant_type === "size" && !!p.sizes?.length)
+          );
+          const anyOpen = rowsWithVariants.some((p) => expandedRows.has(p.id));
+          const label = anyOpen ? "Collapse all" : "Expand all";
+          return (
+            <button
+              type="button"
+              onClick={() => {
+                if (anyOpen) setExpandedRows(new Set());
+                else setExpandedRows(new Set(rowsWithVariants.map((p) => p.id)));
+              }}
+              className="inline-flex items-center gap-1.5 px-3 py-2 border border-slate-200 rounded-lg text-sm bg-white text-slate-500 hover:border-slate-300 hover:text-slate-700 transition-colors"
+            >
+              {label}
+            </button>
+          );
+        })()}
 
         {/* Clear all */}
         {hasFilters && (
@@ -395,8 +434,8 @@ export default function Screener({
                 {show("colors")        && <StaticTh colKey="colors"        label="Colors"        icon={Palette}       />}
                 {show("category")      && <SortTh sk="category"      label="Category"       icon={FolderTree}    />}
                 {show("supplier")      && <SortTh sk="supplier"      label="Supplier"       icon={Truck}         />}
-                {show("purchasePrice") && <SortTh sk="purchasePrice" label="Purchase Price" align="right" />}
-                {show("salePrice")     && <SortTh sk="salePrice"     label="Sale Price"     align="right" />}
+                {show("purchasePrice") && <SortTh sk="purchasePrice" label="Purchase" align="right" />}
+                {show("salePrice")     && <SortTh sk="salePrice"     label="Sale"     align="right" />}
                 {show("inStock")       && <SortTh sk="inStock"       label="In Stock"       align="right" />}
                 {show("shelfLocation") && <StaticTh colKey="shelfLocation" label="Shelf Location" icon={MapPin}     />}
                 {show("lastUpdated")   && <StaticTh colKey="lastUpdated"   label="Last Updated"   icon={CalendarDays} />}
@@ -416,12 +455,21 @@ export default function Screener({
                   className={i < filtered.length - 1 || isExpanded ? "border-b border-slate-100 hover:bg-slate-50" : "hover:bg-slate-50"}
                 >
                   <td className="px-2 py-1.5 w-8">
-                    {hasVariants && (
-                      <button type="button" onClick={() => toggleExpand(product.id)}
-                        className="p-0.5 text-red-500 hover:text-red-700 transition-colors rounded">
-                        <ChevronRight size={20} strokeWidth={3} className={`transition-transform ${isExpanded ? "rotate-90" : ""}`} />
-                      </button>
-                    )}
+                    <button
+                      type="button"
+                      onClick={() => hasVariants && toggleExpand(product.id)}
+                      disabled={!hasVariants}
+                      aria-label={isExpanded ? "Collapse" : "Expand"}
+                      className="w-[22px] h-[22px] inline-flex items-center justify-center rounded-md text-[10px] text-slate-500 transition-all"
+                      style={{
+                        background: isExpanded ? "oklch(0.93 0.01 265)" : "transparent",
+                        transform: isExpanded ? "rotate(90deg)" : "rotate(0deg)",
+                        opacity: hasVariants ? 1 : 0.25,
+                        cursor: hasVariants ? "pointer" : "default",
+                      }}
+                    >
+                      ▶
+                    </button>
                   </td>
                   {show("no") && (
                     <td className="px-4 py-1.5 text-sm text-slate-400 tabular-nums">{i + 1}</td>
@@ -450,7 +498,7 @@ export default function Screener({
                     <td className="px-4 py-1.5 text-sm">
                       <Link
                         href={`/products/${product.documentId}/edit`}
-                        className="text-sm font-medium text-slate-900 hover:text-blue-600 transition-colors"
+                        className="text-sm font-medium text-slate-900 hover:text-teal-700 transition-colors"
                       >
                         {toPascalCase(product.name)}
                       </Link>
@@ -459,14 +507,17 @@ export default function Screener({
                   )}
 
                   {show("sizes") && (
-                    <td className="px-4 py-1.5 text-xl">
+                    <td className="px-4 py-1.5">
                       {product.sizes && product.sizes.length > 0 ? (
                         <div className="flex flex-wrap gap-1">
-                          {product.sizes.map((s, idx) => (
-                            <span key={idx} className="inline-block px-2 py-0.5 bg-slate-100 text-slate-600 text-xs rounded-full">
-                              {s.value} {s.unit}
-                            </span>
-                          ))}
+                          {product.sizes.map((s, idx) => {
+                            const label = `${s.value} ${s.unit}`;
+                            return (
+                              <span key={idx} className="inline-flex items-center h-[22px] px-[9px] rounded-md text-[11.5px] font-medium whitespace-nowrap" style={chipStyle(label)}>
+                                {label}
+                              </span>
+                            );
+                          })}
                         </div>
                       ) : (
                         <span className="text-slate-300 text-sm">—</span>
@@ -475,11 +526,13 @@ export default function Screener({
                   )}
 
                   {show("weight") && (
-                    <td className="px-4 py-1.5 text-xl">
+                    <td className="px-4 py-1.5">
                       {product.weight_variants && product.weight_variants.length > 0 ? (
                         <div className="flex flex-wrap gap-1">
                           {product.weight_variants.map((v, idx) => (
-                            <span key={idx} className="inline-block px-2 py-0.5 text-xs rounded-full font-medium text-slate-800 border" style={{ borderColor: WEIGHT_BORDER_COLORS[v.weight] ?? "#94a3b8" }}>{v.weight}</span>
+                            <span key={idx} className="inline-flex items-center h-[22px] px-[9px] rounded-md text-[11.5px] font-medium whitespace-nowrap" style={chipStyle(v.weight)}>
+                              {v.weight}
+                            </span>
                           ))}
                         </div>
                       ) : (
@@ -513,7 +566,7 @@ export default function Screener({
                   {show("supplier") && (() => {
                     const c = product.brand_supplier ? getSupplierColor(product.brand_supplier.color) : null;
                     return (
-                      <td className="px-4 py-1.5 text-sm font-medium overflow-hidden"
+                      <td className="px-4 py-1.5 text-base font-medium overflow-hidden"
                         style={c ? { color: c.bg } : undefined}>
                         {product.brand_supplier ? (() => {
                           const name = toPascalCase(product.brand_supplier.name);
@@ -575,80 +628,90 @@ export default function Screener({
                 </tr>
 
                 {/* Variant price breakdown sub-row */}
-                {hasVariants && isExpanded && (
-                  <tr className="border-b border-slate-100 bg-slate-50">
-                    <td colSpan={colSpan} className="px-6 py-1.5">
-                      <table className="text-xs">
-                        <thead>
-                          <tr className="text-slate-400">
-                            <th className="text-left font-medium pr-8 pb-1">
-                              {product.variant_type === "weight" ? "Weight" : "Size"}
-                            </th>
-                            <th className="text-right font-medium pr-6 pb-1">Purchase Price</th>
-                            <th className="text-right font-medium pr-6 pb-1">Sale Price</th>
-                            <th className="text-right font-medium pb-1">In Stock</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {product.variant_type === "weight" && product.weight_variants?.map((v, idx) => (
+                {hasVariants && isExpanded && (() => {
+                  const gridCols = "minmax(140px,1fr) 120px 120px 96px";
+                  const varLabel = product.variant_type === "weight" ? "Weight" : "Size";
+                  const money = (n: number | null | undefined) =>
+                    n != null ? `Rs ${n.toLocaleString()}` : null;
+
+                  type Line = { label: React.ReactNode; purchase: number | null | undefined; sale: number | null | undefined; stock: number | null | undefined; sub?: { label: string; stock: number | null | undefined }[] };
+                  const lines: Line[] = product.variant_type === "weight"
+                    ? (product.weight_variants ?? []).map((v) => ({
+                        label: <span className="inline-flex items-center h-[22px] px-[9px] rounded-md text-[11.5px] font-medium whitespace-nowrap" style={chipStyle(v.weight)}>{v.weight}</span>,
+                        purchase: v.purchase_price,
+                        sale: v.sale_price,
+                        stock: v.variant_colors?.length
+                          ? v.variant_colors.reduce((s, c) => s + (c.in_stock ?? 0), 0)
+                          : v.in_stock,
+                        sub: v.variant_colors?.map((c) => ({ label: c.value, stock: c.in_stock })),
+                      }))
+                    : (product.sizes ?? []).map((s) => {
+                        const label = `${s.value} ${s.unit}`;
+                        return {
+                          label: <span className="inline-flex items-center h-[22px] px-[9px] rounded-md text-[11.5px] font-medium whitespace-nowrap" style={chipStyle(label)}>{label}</span>,
+                          purchase: s.purchase_price,
+                          sale: s.sale_price,
+                          stock: s.variant_colors?.length
+                            ? s.variant_colors.reduce((sum, c) => sum + (c.in_stock ?? 0), 0)
+                            : s.in_stock,
+                          sub: s.variant_colors?.map((c) => ({ label: c.value, stock: c.in_stock })),
+                        };
+                      });
+
+                  return (
+                    <tr className="border-b border-slate-100">
+                      <td colSpan={colSpan} className="p-0">
+                        <div className="pt-1 pb-3.5 pl-16 pr-4 bg-[oklch(0.982_0.005_265)] border-t border-slate-100">
+                          <div
+                            className="grid gap-3 pt-2 pb-1.5 text-[10px] font-semibold uppercase tracking-wider text-slate-500"
+                            style={{ gridTemplateColumns: gridCols }}
+                          >
+                            <div>{varLabel}</div>
+                            <div className="text-right">Purchase</div>
+                            <div className="text-right">Sale</div>
+                            <div className="text-right">In stock</div>
+                          </div>
+                          {lines.map((line, idx) => (
                             <React.Fragment key={idx}>
-                              <tr>
-                                <td className="pr-8 py-0.5">
-                                  <span className="inline-block px-2 py-0.5 text-xs rounded-full font-medium text-slate-800 border" style={{ borderColor: WEIGHT_BORDER_COLORS[v.weight] ?? "#94a3b8" }}>{v.weight}</span>
-                                </td>
-                                <td className="pr-6 py-0.5 text-right text-slate-500 tabular-nums">
-                                  {v.purchase_price != null ? `Rs ${v.purchase_price.toLocaleString()}` : <span className="text-slate-300">—</span>}
-                                </td>
-                                <td className="pr-6 py-0.5 text-right text-slate-700 font-medium tabular-nums">
-                                  {v.sale_price != null ? `Rs ${v.sale_price.toLocaleString()}` : <span className="text-slate-300">—</span>}
-                                </td>
-                                <td className="py-0.5 text-right text-slate-500 tabular-nums">
-                                  {v.variant_colors?.length
-                                    ? v.variant_colors.reduce((s, c) => s + (c.in_stock ?? 0), 0)
-                                    : v.in_stock != null ? v.in_stock : <span className="text-slate-300">—</span>}
-                                </td>
-                              </tr>
-                              {v.variant_colors?.map((c, ci) => (
-                                <tr key={ci} className="text-slate-400">
-                                  <td className="pl-4 pr-8 py-0.5">↳ {c.value}</td>
-                                  <td className="pr-6" />
-                                  <td className="pr-6" />
-                                  <td className="py-0.5 text-right tabular-nums">{c.in_stock ?? <span className="text-slate-300">—</span>}</td>
-                                </tr>
+                              <div
+                                className="grid gap-3 items-center h-[34px] border-t border-slate-100"
+                                style={{ gridTemplateColumns: gridCols }}
+                              >
+                                <div className="min-w-0">{line.label}</div>
+                                <div className="text-right font-mono text-[12.5px] text-slate-500 tabular-nums">
+                                  {money(line.purchase) ?? <span className="text-slate-300">—</span>}
+                                </div>
+                                <div className="text-right font-mono text-[12.5px] font-medium text-slate-800 tabular-nums">
+                                  {money(line.sale) ?? <span className="text-slate-300">—</span>}
+                                </div>
+                                <div
+                                  className="text-right font-mono text-[12.5px] tabular-nums"
+                                  style={{ color: line.stock === 0 ? "oklch(0.55 0.14 20)" : "oklch(0.45 0.015 265)" }}
+                                >
+                                  {line.stock != null ? line.stock : <span className="text-slate-300">—</span>}
+                                </div>
+                              </div>
+                              {line.sub?.map((c, ci) => (
+                                <div
+                                  key={ci}
+                                  className="grid gap-3 items-center h-[28px] border-t border-slate-100/70 text-slate-400 text-[11.5px]"
+                                  style={{ gridTemplateColumns: gridCols }}
+                                >
+                                  <div className="pl-4 min-w-0 truncate">↳ {c.label}</div>
+                                  <div />
+                                  <div />
+                                  <div className="text-right font-mono text-[12px] tabular-nums">
+                                    {c.stock != null ? c.stock : <span className="text-slate-300">—</span>}
+                                  </div>
+                                </div>
                               ))}
                             </React.Fragment>
                           ))}
-                          {product.variant_type === "size" && product.sizes?.map((s, idx) => (
-                            <React.Fragment key={idx}>
-                              <tr>
-                                <td className="pr-8 py-0.5 text-slate-700 font-medium">{s.value} {s.unit}</td>
-                                <td className="pr-6 py-0.5 text-right text-slate-500 tabular-nums">
-                                  {s.purchase_price != null ? `Rs ${s.purchase_price.toLocaleString()}` : <span className="text-slate-300">—</span>}
-                                </td>
-                                <td className="pr-6 py-0.5 text-right text-slate-700 font-medium tabular-nums">
-                                  {s.sale_price != null ? `Rs ${s.sale_price.toLocaleString()}` : <span className="text-slate-300">—</span>}
-                                </td>
-                                <td className="py-0.5 text-right text-slate-500 tabular-nums">
-                                  {s.variant_colors?.length
-                                    ? s.variant_colors.reduce((sum, c) => sum + (c.in_stock ?? 0), 0)
-                                    : s.in_stock != null ? s.in_stock : <span className="text-slate-300">—</span>}
-                                </td>
-                              </tr>
-                              {s.variant_colors?.map((c, ci) => (
-                                <tr key={ci} className="text-slate-400">
-                                  <td className="pl-4 pr-8 py-0.5">↳ {c.value}</td>
-                                  <td className="pr-6" />
-                                  <td className="pr-6" />
-                                  <td className="py-0.5 text-right tabular-nums">{c.in_stock ?? <span className="text-slate-300">—</span>}</td>
-                                </tr>
-                              ))}
-                            </React.Fragment>
-                          ))}
-                        </tbody>
-                      </table>
-                    </td>
-                  </tr>
-                )}
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })()}
                 </React.Fragment>
                 );
               })}

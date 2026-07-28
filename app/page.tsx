@@ -36,7 +36,8 @@ export default async function ScreenerPage({
         <h1 className="text-2xl font-semibold text-slate-900">Products</h1>
         <Link
           href="/products/new"
-          className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors"
+          className="inline-flex items-center gap-2 px-4 py-2 text-white text-sm font-medium rounded-lg transition-colors hover:brightness-110"
+          style={{ background: "oklch(0.5 0.11 190)" }}
         >
           <Plus size={15} />
           Add Product
