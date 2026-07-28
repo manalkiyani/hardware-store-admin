@@ -3,10 +3,9 @@
 import React, { useState, useMemo, useCallback, useRef, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { Search, X, Columns3, ChevronUp, ChevronDown, ChevronsUpDown, ChevronRight, Hash, ImageIcon, Tag, Ruler, Weight, Palette, FolderTree, Truck, ShoppingCart, BadgeDollarSign, Package, MapPin, CalendarDays } from "lucide-react";
+import { Search, X, Columns3, ChevronUp, ChevronDown, ChevronsUpDown, ChevronRight, Hash, ImageIcon, Tag, Ruler, Palette, FolderTree, Truck, ShoppingCart, BadgeDollarSign, Package, MapPin, CalendarDays } from "lucide-react";
 import { useRouter } from "next/navigation";
 import type { Product, Category, BrandSupplier, WeightVariant, SizeEntry } from "@/lib/types";
-import { getSupplierColor } from "@/lib/supplier-colors";
 import { toPascalCase } from "@/lib/utils";
 
 const CHIP_HUES = [262, 210, 180, 150, 120, 80, 45, 20, 300, 330];
@@ -64,14 +63,13 @@ interface ScreenerProps {
   initialSupplierId?: string;
 }
 
-type ColKey = "no" | "image" | "name" | "sizes" | "weight" | "colors" | "category" | "supplier" | "purchasePrice" | "salePrice" | "inStock" | "shelfLocation" | "lastUpdated";
+type ColKey = "no" | "image" | "name" | "sizeWeight" | "colors" | "category" | "supplier" | "purchasePrice" | "salePrice" | "inStock" | "shelfLocation" | "lastUpdated";
 
 const ALL_COLS: { key: ColKey; label: string; defaultOn: boolean; align?: "right" }[] = [
   { key: "no",            label: "No.",            defaultOn: false },
   { key: "image",         label: "Image",          defaultOn: false },
   { key: "name",          label: "Name",           defaultOn: true  },
-  { key: "sizes",         label: "Sizes",          defaultOn: true  },
-  { key: "weight",        label: "Weight",         defaultOn: true  },
+  { key: "sizeWeight",    label: "Size / Weight",  defaultOn: true  },
   { key: "colors",        label: "Colors",         defaultOn: false },
   { key: "category",      label: "Category",       defaultOn: false },
   { key: "supplier",      label: "Supplier",       defaultOn: false },
@@ -155,7 +153,7 @@ export default function Screener({
   const [search, setSearch] = useState(initialSearch);
   const [categoryId, setCategoryId] = useState(initialCategoryId);
   const [supplierId, setSupplierId] = useState(initialSupplierId);
-  type SortKey = "name" | "purchasePrice" | "salePrice" | "inStock" | "weight" | "category" | "supplier" | "shelfLocation";
+  type SortKey = "name" | "purchasePrice" | "salePrice" | "inStock" | "sizeWeight" | "category" | "supplier" | "shelfLocation";
   type SortDir = "asc" | "desc";
   const [sortKey, setSortKey] = useState<SortKey | null>(null);
   const [sortDir, setSortDir] = useState<SortDir>("asc");
@@ -281,7 +279,10 @@ export default function Screener({
       else if (sortKey === "purchasePrice") { av = a.purchase_price ?? null; bv = b.purchase_price ?? null; }
       else if (sortKey === "salePrice")     { av = lowestSalePrice(a);       bv = lowestSalePrice(b); }
       else if (sortKey === "inStock")       { av = a.in_stock ?? null;        bv = b.in_stock ?? null; }
-      else if (sortKey === "weight")        { av = a.weight_variants?.[0]?.weight ?? ""; bv = b.weight_variants?.[0]?.weight ?? ""; }
+      else if (sortKey === "sizeWeight")    {
+        av = a.variant_type === "size" ? (a.sizes?.[0] ? `${a.sizes[0].value} ${a.sizes[0].unit}` : "") : (a.weight_variants?.[0]?.weight ?? "");
+        bv = b.variant_type === "size" ? (b.sizes?.[0] ? `${b.sizes[0].value} ${b.sizes[0].unit}` : "") : (b.weight_variants?.[0]?.weight ?? "");
+      }
       else if (sortKey === "category")      { av = a.category?.name ?? "";   bv = b.category?.name ?? ""; }
       else if (sortKey === "supplier")      { av = a.brand_supplier?.name ?? ""; bv = b.brand_supplier?.name ?? ""; }
       else if (sortKey === "shelfLocation") { av = a.shelf_location ?? "";   bv = b.shelf_location ?? ""; }
@@ -429,8 +430,7 @@ export default function Screener({
                 {show("no")            && <StaticTh colKey="no"           label="No."           icon={Hash}          />}
                 {show("image")         && <StaticTh colKey="image"         label="Image"         icon={ImageIcon}     />}
                 {show("name")          && <SortTh sk="name"          label="Name"           icon={Tag}           />}
-                {show("sizes")         && <StaticTh colKey="sizes"         label="Sizes"         icon={Ruler}         />}
-                {show("weight")        && <SortTh sk="weight"        label="Weight"         icon={Weight}        />}
+                {show("sizeWeight")    && <SortTh sk="sizeWeight"    label="Size / Weight"  icon={Ruler}         />}
                 {show("colors")        && <StaticTh colKey="colors"        label="Colors"        icon={Palette}       />}
                 {show("category")      && <SortTh sk="category"      label="Category"       icon={FolderTree}    />}
                 {show("supplier")      && <SortTh sk="supplier"      label="Supplier"       icon={Truck}         />}
@@ -506,40 +506,34 @@ export default function Screener({
                     </td>
                   )}
 
-                  {show("sizes") && (
-                    <td className="px-4 py-1.5">
-                      {product.sizes && product.sizes.length > 0 ? (
-                        <div className="flex flex-wrap gap-1">
-                          {product.sizes.map((s, idx) => {
-                            const label = `${s.value} ${s.unit}`;
-                            return (
+                  {show("sizeWeight") && (() => {
+                    const isWeight = product.variant_type === "weight" && !!product.weight_variants?.length;
+                    const isSize = product.variant_type === "size" && !!product.sizes?.length;
+                    const axis = isWeight ? "WEIGHT" : isSize ? "SIZE" : null;
+                    const chips: string[] = isWeight
+                      ? (product.weight_variants ?? []).map((v) => v.weight)
+                      : isSize
+                      ? (product.sizes ?? []).map((s) => `${s.value} ${s.unit}`)
+                      : [];
+                    return (
+                      <td className="px-4 py-1.5">
+                        {axis ? (
+                          <div className="flex items-center gap-2 min-w-0 flex-wrap">
+                            <span className="flex-none text-[9.5px] font-semibold uppercase tracking-wider text-slate-400 w-[52px]">
+                              {axis}
+                            </span>
+                            {chips.map((label, idx) => (
                               <span key={idx} className="inline-flex items-center h-[22px] px-[9px] rounded-md text-[11.5px] font-medium whitespace-nowrap" style={chipStyle(label)}>
                                 {label}
                               </span>
-                            );
-                          })}
-                        </div>
-                      ) : (
-                        <span className="text-slate-300 text-sm">—</span>
-                      )}
-                    </td>
-                  )}
-
-                  {show("weight") && (
-                    <td className="px-4 py-1.5">
-                      {product.weight_variants && product.weight_variants.length > 0 ? (
-                        <div className="flex flex-wrap gap-1">
-                          {product.weight_variants.map((v, idx) => (
-                            <span key={idx} className="inline-flex items-center h-[22px] px-[9px] rounded-md text-[11.5px] font-medium whitespace-nowrap" style={chipStyle(v.weight)}>
-                              {v.weight}
-                            </span>
-                          ))}
-                        </div>
-                      ) : (
-                        <span className="text-slate-300 text-sm">—</span>
-                      )}
-                    </td>
-                  )}
+                            ))}
+                          </div>
+                        ) : (
+                          <span className="text-slate-300 text-sm">—</span>
+                        )}
+                      </td>
+                    );
+                  })()}
 
                   {show("colors") && (
                     <td className="px-4 py-1.5">
@@ -558,16 +552,14 @@ export default function Screener({
                   )}
 
                   {show("category") && (
-                    <td className="px-4 py-1.5 text-base text-slate-500">
+                    <td className="px-4 py-1.5 text-sm font-normal text-slate-900">
                       {product.category ? toPascalCase(product.category.name) : <span className="text-slate-300">—</span>}
                     </td>
                   )}
 
                   {show("supplier") && (() => {
-                    const c = product.brand_supplier ? getSupplierColor(product.brand_supplier.color) : null;
                     return (
-                      <td className="px-4 py-1.5 text-base font-medium overflow-hidden"
-                        style={c ? { color: c.bg } : undefined}>
+                      <td className="px-4 py-1.5 text-sm font-normal text-slate-900 overflow-hidden">
                         {product.brand_supplier ? (() => {
                           const name = toPascalCase(product.brand_supplier.name);
                           const truncated = name.length > 30 ? name.slice(0, 30) + "…" : name;
