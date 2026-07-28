@@ -9,11 +9,11 @@ import type { Product, Category, BrandSupplier, WeightVariant, SizeEntry, Weight
 import { getSupplierColor } from "@/lib/supplier-colors";
 import { toPascalCase } from "@/lib/utils";
 
-const WEIGHT_COLORS: Record<WeightUnit, string> = {
-  Dabbi:   "bg-orange-500 text-white",
-  Quarter: "bg-blue-500 text-white",
-  Gallon:  "bg-emerald-500 text-white",
-  Bucket:  "bg-violet-500 text-white",
+const WEIGHT_BORDER_COLORS: Record<WeightUnit, string> = {
+  Dabbi:   "#f97316",
+  Quarter: "#3b82f6",
+  Gallon:  "#10b981",
+  Bucket:  "#8b5cf6",
 };
 
 function lowestSalePrice(p: Product): number | null {
@@ -472,9 +472,9 @@ export default function Screener({
                   {show("weight") && (
                     <td className="px-4 py-1.5 text-xl">
                       {product.weight_variants && product.weight_variants.length > 0 ? (
-                        <div className="flex flex-col gap-0.5">
+                        <div className="flex flex-wrap gap-1">
                           {product.weight_variants.map((v, idx) => (
-                            <span key={idx} className="text-slate-600">{v.weight}</span>
+                            <span key={idx} className="inline-block px-2 py-0.5 text-xs rounded-full font-medium text-slate-800 border" style={{ borderColor: WEIGHT_BORDER_COLORS[v.weight] ?? "#94a3b8" }}>{v.weight}</span>
                           ))}
                         </div>
                       ) : (
