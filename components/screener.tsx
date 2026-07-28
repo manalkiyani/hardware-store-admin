@@ -32,12 +32,29 @@ function chipStyle(label: string): React.CSSProperties {
   };
 }
 
+function variantAxis(p: Product): "weight" | "size" | null {
+  if (p.weight_variants?.length) return "weight";
+  if (p.sizes?.length) return "size";
+  return null;
+}
+
+function totalInStock(p: Product): number | null {
+  const variants = variantAxis(p) === "weight" ? p.weight_variants : variantAxis(p) === "size" ? p.sizes : null;
+  if (!variants?.length) return p.in_stock ?? null;
+  const hasVariantData = variants.some((v) => v.in_stock != null || v.variant_colors?.length);
+  if (!hasVariantData) return p.in_stock ?? null;
+  return variants.reduce((sum, v) =>
+    sum + (v.variant_colors?.length
+      ? v.variant_colors.reduce((cs, c) => cs + (c.in_stock ?? 0), 0)
+      : (v.in_stock ?? 0)), 0);
+}
+
 function lowestSalePrice(p: Product): number | null {
-  if (p.variant_type === "weight" && p.weight_variants?.length) {
+  if (variantAxis(p) === "weight" && p.weight_variants?.length) {
     const prices = p.weight_variants.map((v: WeightVariant) => v.sale_price ?? p.sale_price).filter((x): x is number => x != null);
     return prices.length ? Math.min(...prices) : p.sale_price ?? null;
   }
-  if (p.variant_type === "size" && p.sizes?.length) {
+  if (variantAxis(p) === "size" && p.sizes?.length) {
     const prices = p.sizes.map((s: SizeEntry) => s.sale_price ?? p.sale_price).filter((x): x is number => x != null);
     return prices.length ? Math.min(...prices) : p.sale_price ?? null;
   }
@@ -45,7 +62,7 @@ function lowestSalePrice(p: Product): number | null {
 }
 
 function priceDisplay(p: Product): string {
-  if (p.variant_type === "none" || !p.variant_type) {
+  if (!variantAxis(p)) {
     return p.sale_price != null ? `Rs ${p.sale_price.toLocaleString()}` : "—";
   }
   const low = lowestSalePrice(p);
@@ -278,10 +295,10 @@ export default function Screener({
       if (sortKey === "name")          { av = a.name;                    bv = b.name; }
       else if (sortKey === "purchasePrice") { av = a.purchase_price ?? null; bv = b.purchase_price ?? null; }
       else if (sortKey === "salePrice")     { av = lowestSalePrice(a);       bv = lowestSalePrice(b); }
-      else if (sortKey === "inStock")       { av = a.in_stock ?? null;        bv = b.in_stock ?? null; }
+      else if (sortKey === "inStock")       { av = totalInStock(a);           bv = totalInStock(b); }
       else if (sortKey === "sizeWeight")    {
-        av = a.variant_type === "size" ? (a.sizes?.[0] ? `${a.sizes[0].value} ${a.sizes[0].unit}` : "") : (a.weight_variants?.[0]?.weight ?? "");
-        bv = b.variant_type === "size" ? (b.sizes?.[0] ? `${b.sizes[0].value} ${b.sizes[0].unit}` : "") : (b.weight_variants?.[0]?.weight ?? "");
+        av = variantAxis(a) === "size" ? (a.sizes?.[0] ? `${a.sizes[0].value} ${a.sizes[0].unit}` : "") : (a.weight_variants?.[0]?.weight ?? "");
+        bv = variantAxis(b) === "size" ? (b.sizes?.[0] ? `${b.sizes[0].value} ${b.sizes[0].unit}` : "") : (b.weight_variants?.[0]?.weight ?? "");
       }
       else if (sortKey === "category")      { av = a.category?.name ?? "";   bv = b.category?.name ?? ""; }
       else if (sortKey === "supplier")      { av = a.brand_supplier?.name ?? ""; bv = b.brand_supplier?.name ?? ""; }
@@ -378,10 +395,7 @@ export default function Screener({
 
         {/* Expand / Collapse all */}
         {(() => {
-          const rowsWithVariants = filtered.filter((p) =>
-            (p.variant_type === "weight" && !!p.weight_variants?.length) ||
-            (p.variant_type === "size" && !!p.sizes?.length)
-          );
+          const rowsWithVariants = filtered.filter((p) => !!variantAxis(p));
           const anyOpen = rowsWithVariants.some((p) => expandedRows.has(p.id));
           const label = anyOpen ? "Collapse all" : "Expand all";
           return (
@@ -444,8 +458,7 @@ export default function Screener({
             </thead>
             <tbody>
               {filtered.map((product, i) => {
-                const hasVariants = (product.variant_type === "weight" && !!product.weight_variants?.length) ||
-                  (product.variant_type === "size" && !!product.sizes?.length);
+                const hasVariants = !!variantAxis(product);
                 const isExpanded = expandedRows.has(product.id);
                 const colSpan = 1 + ALL_COLS.filter((c) => show(c.key)).length + 1; // chevron + visible + actions
 
@@ -507,8 +520,8 @@ export default function Screener({
                   )}
 
                   {show("sizeWeight") && (() => {
-                    const isWeight = product.variant_type === "weight" && !!product.weight_variants?.length;
-                    const isSize = product.variant_type === "size" && !!product.sizes?.length;
+                    const isWeight = !!product.weight_variants?.length;
+                    const isSize = !isWeight && !!product.sizes?.length;
                     const axis = isWeight ? "WEIGHT" : isSize ? "SIZE" : null;
                     const chips: string[] = isWeight
                       ? (product.weight_variants ?? []).map((v) => v.weight)
@@ -588,17 +601,7 @@ export default function Screener({
 
                   {show("inStock") && (
                     <td className="px-4 py-1.5 text-sm text-slate-500 text-right">
-                      {product.variant_type === "weight" && product.weight_variants?.length
-                        ? product.weight_variants.reduce((s, v) =>
-                            s + (v.variant_colors?.length
-                              ? v.variant_colors.reduce((cs, c) => cs + (c.in_stock ?? 0), 0)
-                              : (v.in_stock ?? 0)), 0)
-                        : product.variant_type === "size" && product.sizes?.length
-                        ? product.sizes.reduce((s, v) =>
-                            s + (v.variant_colors?.length
-                              ? v.variant_colors.reduce((cs, c) => cs + (c.in_stock ?? 0), 0)
-                              : (v.in_stock ?? 0)), 0)
-                        : (product.in_stock ?? "—")}
+                      {totalInStock(product) ?? "—"}
                     </td>
                   )}
 
@@ -622,12 +625,12 @@ export default function Screener({
                 {/* Variant price breakdown sub-row */}
                 {hasVariants && isExpanded && (() => {
                   const gridCols = "minmax(140px,1fr) 120px 120px 96px";
-                  const varLabel = product.variant_type === "weight" ? "Weight" : "Size";
+                  const varLabel = variantAxis(product) === "weight" ? "Weight" : "Size";
                   const money = (n: number | null | undefined) =>
                     n != null ? `Rs ${n.toLocaleString()}` : null;
 
                   type Line = { label: React.ReactNode; purchase: number | null | undefined; sale: number | null | undefined; stock: number | null | undefined; sub?: { label: string; stock: number | null | undefined }[] };
-                  const lines: Line[] = product.variant_type === "weight"
+                  const lines: Line[] = variantAxis(product) === "weight"
                     ? (product.weight_variants ?? []).map((v) => ({
                         label: <span className="inline-flex items-center h-[22px] px-[9px] rounded-md text-[11.5px] font-medium whitespace-nowrap" style={chipStyle(v.weight)}>{v.weight}</span>,
                         purchase: v.purchase_price,
