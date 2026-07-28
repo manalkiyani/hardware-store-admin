@@ -156,21 +156,24 @@ export default function Screener({
 
   const [colWidths, setColWidths] = useState<Partial<Record<string, number>>>({});
   const dragRef = useRef<{ key: string; startX: number; startWidth: number; minWidth: number } | null>(null);
+  const setColWidthsRef = useRef(setColWidths);
+  setColWidthsRef.current = setColWidths;
 
-  function startResize(key: string, e: React.MouseEvent) {
+  const startResize = useCallback((key: string, e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    const th = (e.currentTarget as HTMLElement).parentElement as HTMLTableCellElement;
-    // measure header text natural width as minimum (span for SortTh, th itself for static headers)
+    const th = (e.currentTarget as HTMLElement).closest("th") as HTMLTableCellElement;
+    if (!th) return;
     const inner = th.querySelector("span") ?? th;
-    const minWidth = (inner as HTMLElement).scrollWidth + 32; // 32px for padding
+    const minWidth = (inner as HTMLElement).scrollWidth + 32;
 
     dragRef.current = { key, startX: e.clientX, startWidth: th.offsetWidth, minWidth };
 
     function onMove(ev: MouseEvent) {
-      if (!dragRef.current) return;
-      const newWidth = Math.max(dragRef.current.minWidth, dragRef.current.startWidth + ev.clientX - dragRef.current.startX);
-      setColWidths((prev) => ({ ...prev, [dragRef.current!.key]: newWidth }));
+      const drag = dragRef.current;
+      if (!drag) return;
+      const newWidth = Math.max(drag.minWidth, drag.startWidth + ev.clientX - drag.startX);
+      setColWidthsRef.current((prev) => ({ ...prev, [drag.key]: newWidth }));
     }
     function onUp() {
       dragRef.current = null;
@@ -179,18 +182,16 @@ export default function Screener({
     }
     document.addEventListener("mousemove", onMove);
     document.addEventListener("mouseup", onUp);
-  }
+  }, []);
 
-  function ResizeHandle({ colKey }: { colKey: string }) {
-    return (
-      <div
-        onMouseDown={(e) => startResize(colKey, e)}
-        className="absolute right-0 top-0 h-full w-1.5 cursor-col-resize group"
-      >
-        <div className="mx-auto w-px h-full bg-slate-200 group-hover:bg-blue-400 transition-colors" />
-      </div>
-    );
-  }
+  const ResizeHandle = useCallback(({ colKey }: { colKey: string }) => (
+    <div
+      onMouseDown={(e) => startResize(colKey, e)}
+      className="absolute right-0 top-0 h-full w-1.5 cursor-col-resize group"
+    >
+      <div className="mx-auto w-px h-full bg-slate-200 group-hover:bg-blue-400 transition-colors" />
+    </div>
+  ), [startResize]);
 
   function toggleExpand(id: number) {
     setExpandedRows((prev) => {
@@ -200,16 +201,20 @@ export default function Screener({
     });
   }
 
-  const [visibleCols, setVisibleCols] = useState<Set<ColKey>>(() => {
+  const [visibleCols, setVisibleCols] = useState<Set<ColKey>>(
+    new Set(ALL_COLS.filter((c) => c.defaultOn).map((c) => c.key))
+  );
+
+  useEffect(() => {
     try {
       const saved = localStorage.getItem("screener-cols");
       if (saved) {
         const parsed: ColKey[] = JSON.parse(saved);
-        return new Set(parsed.filter((k) => ALL_COLS.some((c) => c.key === k)));
+        const restored = new Set(parsed.filter((k) => ALL_COLS.some((c) => c.key === k)));
+        if (restored.size) setVisibleCols(restored);
       }
     } catch {}
-    return new Set(ALL_COLS.filter((c) => c.defaultOn).map((c) => c.key));
-  });
+  }, []);
 
   function toggleCol(key: ColKey, on: boolean) {
     setVisibleCols((prev) => {
@@ -500,12 +505,8 @@ export default function Screener({
                   )}
 
                   {show("category") && (
-                    <td className="px-4 py-1.5 text-sm text-slate-500">
-                      {product.category ? (
-                        <span className="inline-block px-2 py-0.5 bg-slate-100 text-slate-600 text-xs rounded-full">
-                          {toPascalCase(product.category.name)}
-                        </span>
-                      ) : <span className="text-slate-300">—</span>}
+                    <td className="px-4 py-1.5 text-base text-slate-500">
+                      {product.category ? toPascalCase(product.category.name) : <span className="text-slate-300">—</span>}
                     </td>
                   )}
 
@@ -513,7 +514,7 @@ export default function Screener({
                     const c = product.brand_supplier ? getSupplierColor(product.brand_supplier.color) : null;
                     return (
                       <td className="px-4 py-1.5 text-sm font-medium overflow-hidden"
-                        style={c ? { backgroundColor: c.bg, color: c.text } : undefined}>
+                        style={c ? { color: c.bg } : undefined}>
                         {product.brand_supplier ? (() => {
                           const name = toPascalCase(product.brand_supplier.name);
                           const truncated = name.length > 30 ? name.slice(0, 30) + "…" : name;
@@ -593,7 +594,7 @@ export default function Screener({
                             <React.Fragment key={idx}>
                               <tr>
                                 <td className="pr-8 py-0.5">
-                                  <span className={`inline-block px-2 py-0.5 text-xs rounded-full font-medium ${WEIGHT_COLORS[v.weight] ?? "bg-slate-100 text-slate-600"}`}>{v.weight}</span>
+                                  <span className="inline-block px-2 py-0.5 text-xs rounded-full font-medium text-slate-800 border" style={{ borderColor: WEIGHT_BORDER_COLORS[v.weight] ?? "#94a3b8" }}>{v.weight}</span>
                                 </td>
                                 <td className="pr-6 py-0.5 text-right text-slate-500 tabular-nums">
                                   {v.purchase_price != null ? `Rs ${v.purchase_price.toLocaleString()}` : <span className="text-slate-300">—</span>}
