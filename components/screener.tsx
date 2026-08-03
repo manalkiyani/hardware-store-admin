@@ -6,6 +6,7 @@ import Image from "next/image";
 import { Search, X, Columns3, ChevronUp, ChevronDown, ChevronsUpDown, ChevronRight, Hash, ImageIcon, Tag, Ruler, Palette, FolderTree, Truck, ShoppingCart, BadgeDollarSign, Package, MapPin, CalendarDays } from "lucide-react";
 import { useRouter } from "next/navigation";
 import type { Product, Category, BrandSupplier, WeightVariant, SizeEntry } from "@/lib/types";
+import { getSupplierColor } from "@/lib/supplier-colors";
 import { toPascalCase } from "@/lib/utils";
 
 const CHIP_HUES = [262, 210, 180, 150, 120, 80, 45, 20, 300, 330];
@@ -30,6 +31,19 @@ function chipStyle(label: string): React.CSSProperties {
     color: `oklch(0.45 0.13 ${h})`,
     boxShadow: `inset 0 0 0 1px oklch(0.89 0.05 ${h})`,
   };
+}
+
+const UNIT_ABBR: Record<string, string> = {
+  inch: "in", foot: "ft", feet: "ft", meter: "m", metre: "m", gram: "g",
+};
+
+function abbreviateLabel(label: string): string {
+  const parts = String(label).trim().split(/\s+/);
+  const unit = parts[parts.length - 1].toLowerCase();
+  const abbr = UNIT_ABBR[unit];
+  if (!abbr) return label;
+  parts[parts.length - 1] = abbr;
+  return parts.join(" ");
 }
 
 function variantAxis(p: Product): "weight" | "size" | null {
@@ -186,6 +200,17 @@ export default function Screener({
 
   const [expandedRows, setExpandedRows] = useState<Set<number>>(new Set());
 
+  const [lightbox, setLightbox] = useState<{ url: string; alt: string } | null>(null);
+
+  useEffect(() => {
+    if (!lightbox) return;
+    function onKey(e: KeyboardEvent) {
+      if (e.key === "Escape") setLightbox(null);
+    }
+    document.addEventListener("keydown", onKey);
+    return () => document.removeEventListener("keydown", onKey);
+  }, [lightbox]);
+
   const [colWidths, setColWidths] = useState<Partial<Record<string, number>>>({});
   const dragRef = useRef<{ key: string; startX: number; startWidth: number; minWidth: number } | null>(null);
   const setColWidthsRef = useRef(setColWidths);
@@ -279,9 +304,10 @@ export default function Screener({
   }
 
   const filtered = useMemo(() => {
-    const q = search.trim().toLowerCase();
+    const terms = search.trim().toLowerCase().split(/\s+/).filter(Boolean);
     const list = products.filter((p) => {
-      const matchesSearch = !q || p.name.toLowerCase().includes(q) || (p.slug ?? "").toLowerCase().includes(q);
+      const haystack = `${p.name} ${p.slug ?? ""} ${p.code ?? ""}`.toLowerCase();
+      const matchesSearch = terms.every((t) => haystack.includes(t));
       const matchesCategory = !categoryId || String(p.category?.id) === categoryId;
       const matchesSupplier = !supplierId || String(p.brand_supplier?.id) === supplierId;
       return matchesSearch && matchesCategory && matchesSupplier;
@@ -323,12 +349,12 @@ export default function Screener({
       <th
         onClick={() => handleSort(sk)}
         style={{ width: colWidths[sk] }}
-        className={`relative text-xs font-medium uppercase tracking-wide px-4 py-1.5 cursor-pointer select-none whitespace-nowrap text-${align} ${active ? "text-teal-700" : "text-slate-400 hover:text-slate-600"}`}
+        className={`relative text-xs font-medium uppercase tracking-wide px-4 py-1.5 cursor-pointer select-none whitespace-nowrap text-${align} ${active ? "text-teal-700" : "text-slate-900 hover:text-teal-700"}`}
       >
         <span className={`inline-flex items-center gap-1.5 ${align === "right" ? "flex-row-reverse" : ""}`}>
           {ColIcon && <ColIcon size={12} className="flex-shrink-0" />}
           {label}
-          <SortIcon size={12} className={active ? "text-teal-600" : "text-slate-300"} />
+          <SortIcon size={12} className={active ? "text-teal-600" : "text-slate-400"} />
         </span>
         <ResizeHandle colKey={sk} />
       </th>
@@ -339,7 +365,7 @@ export default function Screener({
     return (
       <th
         style={{ width: colWidths[colKey] }}
-        className={`relative text-xs font-medium uppercase tracking-wide px-4 py-1.5 whitespace-nowrap text-slate-400 text-${align}`}
+        className={`relative text-xs font-medium uppercase tracking-wide px-4 py-1.5 whitespace-nowrap text-slate-900 text-${align}`}
       >
         <span className={`inline-flex items-center gap-1.5 ${align === "right" ? "flex-row-reverse" : ""}`}>
           {ColIcon && <ColIcon size={12} className="flex-shrink-0" />}
@@ -437,7 +463,7 @@ export default function Screener({
         ) : (
           <table className="w-full text-base" style={{ tableLayout: "fixed", borderCollapse: "collapse" }}>
             <thead>
-              <tr className="border-b border-slate-100">
+              <tr className="border-b border-slate-200">
                 <th className="w-8 px-2 py-1.5 relative" style={{ width: colWidths["chevron"] ?? 32 }}>
                   <ResizeHandle colKey="chevron" />
                 </th>
@@ -453,7 +479,7 @@ export default function Screener({
                 {show("inStock")       && <SortTh sk="inStock"       label="In Stock"       align="right" />}
                 {show("shelfLocation") && <StaticTh colKey="shelfLocation" label="Shelf Location" icon={MapPin}     />}
                 {show("lastUpdated")   && <StaticTh colKey="lastUpdated"   label="Last Updated"   icon={CalendarDays} />}
-                <th className="text-right text-xs font-medium text-slate-400 uppercase tracking-wide px-4 py-1.5" style={{ width: colWidths["actions"] ?? 80 }}>Actions</th>
+                <th className="text-right text-xs font-medium text-slate-900 uppercase tracking-wide px-4 py-1.5" style={{ width: colWidths["actions"] ?? 80 }}>Actions</th>
               </tr>
             </thead>
             <tbody>
@@ -465,7 +491,7 @@ export default function Screener({
                 return (
                 <React.Fragment key={product.id}>
                 <tr
-                  className={i < filtered.length - 1 || isExpanded ? "border-b border-slate-100 hover:bg-slate-50" : "hover:bg-slate-50"}
+                  className={i < filtered.length - 1 || isExpanded ? "border-b border-slate-200 hover:bg-slate-50" : "hover:bg-slate-50"}
                 >
                   <td className="px-2 py-1.5 w-8">
                     <button
@@ -490,7 +516,16 @@ export default function Screener({
 
                   {show("image") && (
                     <td className="px-4 py-1.5">
-                      <div className="w-10 h-10 rounded-lg bg-slate-100 overflow-hidden flex-shrink-0 flex items-center justify-center">
+                      <div
+                        className={`w-10 h-10 rounded-lg bg-slate-100 overflow-hidden flex-shrink-0 flex items-center justify-center ${product.picture ? "cursor-zoom-in" : ""}`}
+                        onClick={() => {
+                          if (!product.picture) return;
+                          setLightbox({
+                            url: `http://localhost:1337${product.picture.url}`,
+                            alt: product.name,
+                          });
+                        }}
+                      >
                         {product.picture ? (
                           <Image
                             src={`http://localhost:1337${product.picture.formats?.thumbnail?.url ?? product.picture.url}`}
@@ -537,7 +572,7 @@ export default function Screener({
                             </span>
                             {chips.map((label, idx) => (
                               <span key={idx} className="inline-flex items-center h-[22px] px-[9px] rounded-md text-[11.5px] font-medium whitespace-nowrap" style={chipStyle(label)}>
-                                {label}
+                                {abbreviateLabel(label)}
                               </span>
                             ))}
                           </div>
@@ -571,8 +606,9 @@ export default function Screener({
                   )}
 
                   {show("supplier") && (() => {
+                    const color = product.brand_supplier ? getSupplierColor(product.brand_supplier.color) : null;
                     return (
-                      <td className="px-4 py-1.5 text-sm font-normal text-slate-900 overflow-hidden">
+                      <td className="px-4 py-1.5 text-sm font-semibold overflow-hidden" style={color ? { color: color.bg } : undefined}>
                         {product.brand_supplier ? (() => {
                           const name = toPascalCase(product.brand_supplier.name);
                           const truncated = name.length > 30 ? name.slice(0, 30) + "…" : name;
@@ -592,7 +628,7 @@ export default function Screener({
                   )}
 
                   {show("salePrice") && (
-                    <td className="px-4 py-1.5 text-sm text-slate-900 text-right font-medium">
+                    <td className="px-4 py-1.5 text-sm text-green-600 text-right font-medium">
                       {priceDisplay(product) !== "—"
                         ? priceDisplay(product)
                         : <span className="text-slate-300 font-normal">—</span>}
@@ -624,7 +660,7 @@ export default function Screener({
 
                 {/* Variant price breakdown sub-row */}
                 {hasVariants && isExpanded && (() => {
-                  const gridCols = "minmax(140px,1fr) 120px 120px 96px";
+                  const gridCols = "200px 120px 120px 96px";
                   const varLabel = variantAxis(product) === "weight" ? "Weight" : "Size";
                   const money = (n: number | null | undefined) =>
                     n != null ? `Rs ${n.toLocaleString()}` : null;
@@ -632,7 +668,7 @@ export default function Screener({
                   type Line = { label: React.ReactNode; purchase: number | null | undefined; sale: number | null | undefined; stock: number | null | undefined; sub?: { label: string; stock: number | null | undefined }[] };
                   const lines: Line[] = variantAxis(product) === "weight"
                     ? (product.weight_variants ?? []).map((v) => ({
-                        label: <span className="inline-flex items-center h-[22px] px-[9px] rounded-md text-[11.5px] font-medium whitespace-nowrap" style={chipStyle(v.weight)}>{v.weight}</span>,
+                        label: <span className="inline-flex items-center h-[22px] px-[9px] rounded-md text-[11.5px] font-medium whitespace-nowrap" style={chipStyle(v.weight)}>{abbreviateLabel(v.weight)}</span>,
                         purchase: v.purchase_price,
                         sale: v.sale_price,
                         stock: v.variant_colors?.length
@@ -643,7 +679,7 @@ export default function Screener({
                     : (product.sizes ?? []).map((s) => {
                         const label = `${s.value} ${s.unit}`;
                         return {
-                          label: <span className="inline-flex items-center h-[22px] px-[9px] rounded-md text-[11.5px] font-medium whitespace-nowrap" style={chipStyle(label)}>{label}</span>,
+                          label: <span className="inline-flex items-center h-[22px] px-[9px] rounded-md text-[11.5px] font-medium whitespace-nowrap" style={chipStyle(label)}>{abbreviateLabel(label)}</span>,
                           purchase: s.purchase_price,
                           sale: s.sale_price,
                           stock: s.variant_colors?.length
@@ -654,9 +690,9 @@ export default function Screener({
                       });
 
                   return (
-                    <tr className="border-b border-slate-100">
+                    <tr className="border-b border-slate-200">
                       <td colSpan={colSpan} className="p-0">
-                        <div className="pt-1 pb-3.5 pl-16 pr-4 bg-[oklch(0.982_0.005_265)] border-t border-slate-100">
+                        <div className="pt-1 pb-3.5 pl-16 pr-4 bg-[oklch(0.982_0.005_265)] border-t border-slate-200">
                           <div
                             className="grid gap-3 pt-2 pb-1.5 text-[10px] font-semibold uppercase tracking-wider text-slate-500"
                             style={{ gridTemplateColumns: gridCols }}
@@ -669,14 +705,14 @@ export default function Screener({
                           {lines.map((line, idx) => (
                             <React.Fragment key={idx}>
                               <div
-                                className="grid gap-3 items-center h-[34px] border-t border-slate-100"
+                                className="grid gap-3 items-center h-[34px] border-t border-slate-200"
                                 style={{ gridTemplateColumns: gridCols }}
                               >
                                 <div className="min-w-0">{line.label}</div>
                                 <div className="text-right font-mono text-[12.5px] text-slate-500 tabular-nums">
                                   {money(line.purchase) ?? <span className="text-slate-300">—</span>}
                                 </div>
-                                <div className="text-right font-mono text-[12.5px] font-medium text-slate-800 tabular-nums">
+                                <div className="text-right font-mono text-[12.5px] font-medium text-green-600 tabular-nums">
                                   {money(line.sale) ?? <span className="text-slate-300">—</span>}
                                 </div>
                                 <div
@@ -689,7 +725,7 @@ export default function Screener({
                               {line.sub?.map((c, ci) => (
                                 <div
                                   key={ci}
-                                  className="grid gap-3 items-center h-[28px] border-t border-slate-100/70 text-slate-400 text-[11.5px]"
+                                  className="grid gap-3 items-center h-[28px] border-t border-slate-200/70 text-slate-400 text-[11.5px]"
                                   style={{ gridTemplateColumns: gridCols }}
                                 >
                                   <div className="pl-4 min-w-0 truncate">↳ {c.label}</div>
@@ -714,6 +750,28 @@ export default function Screener({
           </table>
         )}
       </div>
+
+      {lightbox && (
+        <div
+          className="fixed inset-0 z-[100] flex items-center justify-center bg-black/70 p-8 cursor-zoom-out"
+          onClick={() => setLightbox(null)}
+        >
+          <img
+            src={lightbox.url}
+            alt={lightbox.alt}
+            className="max-w-full max-h-full rounded-lg shadow-2xl cursor-default"
+            onClick={(e) => e.stopPropagation()}
+          />
+          <button
+            type="button"
+            onClick={() => setLightbox(null)}
+            className="absolute top-5 right-5 w-9 h-9 rounded-full bg-white/10 hover:bg-white/20 text-white flex items-center justify-center transition-colors"
+            aria-label="Close"
+          >
+            <X size={18} />
+          </button>
+        </div>
+      )}
     </div>
   );
 }
