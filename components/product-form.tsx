@@ -21,7 +21,8 @@ interface ProductFormProps {
 }
 
 const SIZE_UNITS: SizeUnit[] = ["inch", "foot", "meter"];
-const WEIGHT_UNITS: WeightUnit[] = ["Dabbi", "Quarter", "Gallon", "Bucket"];
+const WEIGHT_PRESETS: WeightUnit[] = ["Dabbi", "Quarter", "Gallon", "Bucket"];
+const WEIGHT_MASS_UNITS = ["gram", "kg"] as const;
 
 type SaveState = "idle" | "saving" | "saved";
 
@@ -50,7 +51,7 @@ function PricePair({
   return (
     <div className="grid grid-cols-2 gap-3">
       <div>
-        <label className="block text-xs text-slate-400 mb-1">Purchase Price</label>
+        <label className="block text-sm font-medium text-slate-900 mb-1">Purchase Price</label>
         <div className="relative">
           <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm">Rs</span>
           <input type="number" min="0" step="0.01" value={purchase} onChange={(e) => onPurchase(e.target.value)} placeholder="0.00"
@@ -58,7 +59,7 @@ function PricePair({
         </div>
       </div>
       <div>
-        <label className="block text-xs text-slate-400 mb-1">
+        <label className="block text-sm font-medium text-slate-900 mb-1">
           Sale Price {required && <span className="text-red-500">*</span>}
         </label>
         <div className="relative">
@@ -141,11 +142,22 @@ function WeightVariantEditor({
   onChange: (v: WeightVariant[]) => void;
 }) {
   const [addWeight, setAddWeight] = useState<WeightUnit | "">("");
+  const [customValue, setCustomValue] = useState("");
+  const [customUnit, setCustomUnit] = useState<typeof WEIGHT_MASS_UNITS[number]>("gram");
 
   function add() {
     if (!addWeight) return;
     onChange([...variants, { weight: addWeight as WeightUnit, purchase_price: null, sale_price: null, in_stock: null, variant_colors: [] }]);
     setAddWeight("");
+  }
+
+  function addCustom() {
+    const num = parseFloat(customValue);
+    if (isNaN(num) || num <= 0) return;
+    const label = `${num} ${customUnit}`;
+    if (variants.some((v) => v.weight === label)) return;
+    onChange([...variants, { weight: label, purchase_price: null, sale_price: null, in_stock: null, variant_colors: [] }]);
+    setCustomValue("");
   }
 
   function remove(idx: number) {
@@ -169,7 +181,7 @@ function WeightVariantEditor({
       {variants.map((v, i) => (
         <div key={i} className="p-3 bg-slate-50 rounded-lg">
           <div className="flex items-center gap-2">
-            <span className="text-sm font-medium text-slate-700 w-20 flex-shrink-0">{v.weight}</span>
+            <span className="text-sm font-medium text-slate-700 w-24 flex-shrink-0 truncate" title={v.weight}>{v.weight}</span>
             <div className="flex-1 grid grid-cols-3 gap-2">
               <div className="relative">
                 <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400 text-xs">Rs</span>
@@ -204,14 +216,29 @@ function WeightVariantEditor({
         </div>
       ))}
 
-      <div className="flex items-center gap-2">
+      <div className="flex items-center gap-2 flex-wrap">
         <Dropdown
           value={addWeight}
           onChange={(v) => setAddWeight(v as WeightUnit)}
-          placeholder="Select weight…"
-          options={WEIGHT_UNITS.filter((w) => !usedWeights.has(w)).map((w) => ({ value: w, label: w }))}
+          placeholder="Dabbi / Quarter / Gallon / Bucket…"
+          options={WEIGHT_PRESETS.filter((w) => !usedWeights.has(w)).map((w) => ({ value: w, label: w }))}
         />
         <button type="button" onClick={add} disabled={!addWeight}
+          className="inline-flex items-center gap-1 px-3 py-1.5 border border-slate-200 rounded-lg text-sm text-slate-600 hover:bg-slate-50 disabled:opacity-40 transition-colors">
+          <Plus size={13} /> Add
+        </button>
+
+        <span className="text-xs text-slate-400 px-1">or</span>
+
+        <input type="number" min="0" step="any" value={customValue}
+          onChange={(e) => setCustomValue(e.target.value)}
+          onKeyDown={(e) => e.key === "Enter" && (e.preventDefault(), addCustom())}
+          placeholder="e.g. 500"
+          className="w-24 px-3 py-1.5 border border-slate-200 rounded-lg text-sm outline-none focus:border-slate-400"
+        />
+        <Dropdown value={customUnit} onChange={(v) => setCustomUnit(v as typeof WEIGHT_MASS_UNITS[number])} placeholder="gram" clearable={false}
+          options={WEIGHT_MASS_UNITS.map((u) => ({ value: u, label: u }))} />
+        <button type="button" onClick={addCustom} disabled={!customValue}
           className="inline-flex items-center gap-1 px-3 py-1.5 border border-slate-200 rounded-lg text-sm text-slate-600 hover:bg-slate-50 disabled:opacity-40 transition-colors">
           <Plus size={13} /> Add
         </button>
@@ -475,14 +502,14 @@ export default function ProductForm({ product, categories, suppliers }: ProductF
 
               {/* Name */}
               <div className="px-4 py-3">
-                <label className="block text-xs font-medium text-slate-500 mb-1">Name <span className="text-red-500">*</span></label>
+                <label className="block text-sm font-medium text-slate-900 mb-1">Name <span className="text-red-500">*</span></label>
                 <input type="text" value={name} onChange={(e) => setName(e.target.value)} required
                   placeholder="e.g. Stainless Steel Bolt Set" className={inputCls} />
               </div>
 
               {/* Variant type toggle */}
               <div className="px-4 py-3">
-                <p className="text-xs font-medium text-slate-500 mb-2">Pricing Type</p>
+                <p className="text-sm font-medium text-slate-900 mb-2">Pricing Type</p>
                 <div className="flex gap-2">
                   {(["none", "weight", "size"] as VariantType[]).map((t) => (
                     <button key={t} type="button" onClick={() => setVariantType(t)}
@@ -498,7 +525,7 @@ export default function ProductForm({ product, categories, suppliers }: ProductF
               {/* Pricing — single */}
               {variantType === "none" && (
                 <div className="px-4 py-3">
-                  <p className="text-xs font-medium text-slate-500 mb-2">Pricing</p>
+                  <p className="text-sm font-medium text-slate-900 mb-2">Pricing</p>
                   <PricePair purchase={purchasePrice} sale={salePrice}
                     onPurchase={setPurchasePrice} onSale={setSalePrice} required />
                 </div>
@@ -508,7 +535,7 @@ export default function ProductForm({ product, categories, suppliers }: ProductF
               {variantType === "weight" && (
                 <div className="px-4 py-3">
                   <div className="flex items-center justify-between mb-2">
-                    <p className="text-xs font-medium text-slate-500">Weight Variants</p>
+                    <p className="text-sm font-medium text-slate-900">Weight Variants</p>
                     <span className="text-xs text-slate-400">Leave blank if not applicable</span>
                   </div>
                   {weightVariants.length > 0 && (
@@ -526,7 +553,7 @@ export default function ProductForm({ product, categories, suppliers }: ProductF
               {variantType === "size" && (
                 <div className="px-4 py-3">
                   <div className="flex items-center justify-between mb-2">
-                    <p className="text-xs font-medium text-slate-500">Size Variants</p>
+                    <p className="text-sm font-medium text-slate-900">Size Variants</p>
                     <span className="text-xs text-slate-400">Leave blank if not applicable</span>
                   </div>
                   {sizes.length > 0 && (
@@ -543,7 +570,7 @@ export default function ProductForm({ product, categories, suppliers }: ProductF
               {/* Sizes (non-variant — shown only when type = none) */}
               {variantType === "none" && (
                 <div className="px-4 py-3">
-                  <p className="text-xs font-medium text-slate-500 mb-2">Sizes</p>
+                  <p className="text-sm font-medium text-slate-900 mb-2">Sizes</p>
                   <div className="flex flex-wrap gap-2 mb-2">
                     {sizes.map((s, i) => (
                       <span key={i} className="inline-flex items-center gap-1.5 px-3 py-1 bg-slate-100 text-slate-700 text-sm rounded-full">
@@ -589,16 +616,16 @@ export default function ProductForm({ product, categories, suppliers }: ProductF
 
               {/* Inventory */}
               <div className="px-4 py-3">
-                <p className="text-xs font-medium text-slate-500 mb-2">Inventory</p>
+                <p className="text-sm font-medium text-slate-900 mb-2">Inventory</p>
                 <div className={variantType === "none" ? "grid grid-cols-2 gap-3" : ""}>
                   {variantType === "none" && (
                     <div>
-                      <label className="block text-xs text-slate-400 mb-1">In Stock</label>
+                      <label className="block text-sm font-medium text-slate-900 mb-1">In Stock</label>
                       <input type="number" min="0" value={inStock} onChange={(e) => setInStock(e.target.value)} placeholder="0" className={inputCls} />
                     </div>
                   )}
                   <div>
-                    <label className="block text-xs text-slate-400 mb-1">Shelf Location</label>
+                    <label className="block text-sm font-medium text-slate-900 mb-1">Shelf Location</label>
                     <input type="text" value={shelfLocation} onChange={(e) => setShelfLocation(e.target.value)} placeholder="e.g. A3-Row2" className={inputCls} />
                   </div>
                 </div>
@@ -606,13 +633,13 @@ export default function ProductForm({ product, categories, suppliers }: ProductF
 
               {/* Colors */}
               <div className="px-4 py-3">
-                <p className="text-xs font-medium text-slate-500 mb-2">Colors</p>
+                <p className="text-sm font-medium text-slate-900 mb-2">Colors</p>
                 <ChipInput label="Available colors" values={colors} onChange={setColors} />
               </div>
 
               {/* Description */}
               <div className="px-4 py-3">
-                <label className="block text-xs font-medium text-slate-500 mb-1">Description</label>
+                <label className="block text-sm font-medium text-slate-900 mb-1">Description</label>
                 <textarea value={description} onChange={(e) => setDescription(e.target.value)} rows={3}
                   placeholder="Describe the product…"
                   className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm outline-none focus:border-slate-400 focus:ring-1 focus:ring-slate-200 resize-none" />
@@ -620,7 +647,7 @@ export default function ProductForm({ product, categories, suppliers }: ProductF
 
               {/* Material */}
               <div className="px-4 py-3">
-                <label className="block text-xs font-medium text-slate-500 mb-1">Material</label>
+                <label className="block text-sm font-medium text-slate-900 mb-1">Material</label>
                 <input type="text" value={material} onChange={(e) => setMaterial(e.target.value)} placeholder="e.g. Stainless Steel" className={inputCls} />
               </div>
 
@@ -631,12 +658,12 @@ export default function ProductForm({ product, categories, suppliers }: ProductF
           <div className="col-span-1 space-y-3">
 
             <div className="bg-white rounded-xl border border-slate-200 px-4 py-3">
-              <label className="block text-xs font-medium text-slate-500 mb-1">Code / SKU</label>
+              <label className="block text-sm font-medium text-slate-900 mb-1">Code / SKU</label>
               <input type="text" value={code} onChange={(e) => setCode(e.target.value)} placeholder="e.g. SKU-001" className={inputCls} />
             </div>
 
             <div className="bg-white rounded-xl border border-slate-200 p-3">
-              <p className="text-xs font-medium text-slate-500 mb-2">Image</p>
+              <p className="text-sm font-medium text-slate-900 mb-2">Image</p>
               <div onClick={() => fileInputRef.current?.click()}
                 className={clsx("border-2 border-dashed border-slate-200 rounded-lg overflow-hidden cursor-pointer hover:border-slate-400 transition-colors",
                   displayImage ? "aspect-square" : "aspect-video")}>
@@ -655,17 +682,17 @@ export default function ProductForm({ product, categories, suppliers }: ProductF
 
             <div className="bg-white rounded-xl border border-slate-200 divide-y divide-slate-100">
               <div className="px-4 py-3">
-                <label className="block text-xs font-medium text-slate-500 mb-1">Category</label>
+                <label className="block text-sm font-medium text-slate-900 mb-1">Category</label>
                 <Dropdown value={categoryId} onChange={setCategoryId} placeholder="— None —" fullWidth
                   options={categories.map((cat) => ({ value: cat.id.toString(), label: buildCategoryLabel(cat, categories), indent: !!cat.parent_category }))} />
               </div>
               <div className="px-4 py-3">
-                <label className="block text-xs font-medium text-slate-500 mb-1">Brand / Supplier</label>
+                <label className="block text-sm font-medium text-slate-900 mb-1">Brand / Supplier</label>
                 <Dropdown value={supplierId} onChange={setSupplierId} placeholder="— None —" fullWidth
                   options={suppliers.map((s) => ({ value: s.id.toString(), label: s.name }))} />
               </div>
               <div className="px-4 py-3">
-                <label className="block text-xs font-medium text-slate-500 mb-1">Last Updated</label>
+                <label className="block text-sm font-medium text-slate-900 mb-1">Last Updated</label>
                 <input type="date" value={lastUpdated} readOnly
                   className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm text-slate-500 bg-slate-50 cursor-default" />
               </div>

@@ -236,13 +236,9 @@ export default function SupplierManager({
                         <Link
                           href={`/?supplier=${supplier.id}`}
                           className="text-sm font-medium hover:opacity-80 transition-opacity"
+                          style={{ color: color.bg }}
                         >
-                          <span
-                            className="inline-block px-2.5 py-0.5 rounded-full text-xs font-semibold"
-                            style={{ backgroundColor: color.bg, color: color.text }}
-                          >
-                            {toPascalCase(supplier.name)}
-                          </span>
+                          {toPascalCase(supplier.name)}
                         </Link>
                       )}
                     </td>

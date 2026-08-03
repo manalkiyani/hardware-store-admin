@@ -17,5 +17,5 @@ export type SupplierColorKey = typeof SUPPLIER_COLOR_OPTIONS[number]["key"];
 
 export function getSupplierColor(key?: string) {
   return SUPPLIER_COLOR_OPTIONS.find((c) => c.key === key)
-    ?? { bg: "#f1f5f9", text: "#475569" };
+    ?? { bg: "#64748b", text: "#f1f5f9" };
 }
